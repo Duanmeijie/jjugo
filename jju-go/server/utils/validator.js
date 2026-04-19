@@ -7,7 +7,7 @@ const validatePhone = (phone) => {
 };
 
 const validatePassword = (pwd) => {
-  return /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{3,15}$/.test(pwd);
+  return /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':",.<>\/?]{3,15}$/.test(pwd);
 };
 
 const validateNickname = (nickname) => {
