@@ -1,7 +1,11 @@
 <template>
   <div class="goods-detail page" v-loading="loading">
     <div class="container">
-      <div class="goods-container" v-if="goods">
+      <div v-if="error" class="error-state">
+        <p>{{ error }}</p>
+        <el-button type="primary" @click="fetchGoods">刷新重试</el-button>
+      </div>
+      <div class="goods-container" v-else-if="goods">
         <div class="goods-images">
           <el-carousel height="400px" v-if="goods.pics?.length">
             <el-carousel-item v-for="(pic, index) in goods.pics" :key="index">
@@ -67,6 +71,7 @@ const userStore = useUserStore()
 
 const goods = ref(null)
 const loading = ref(true)
+const error = ref('')
 const isFavorited = ref(false)
 const comments = ref([])
 const commentContent = ref('')
@@ -74,12 +79,14 @@ const commentLoading = ref(false)
 
 const fetchGoods = async () => {
   loading.value = true
+  error.value = ''
   try {
     const res = await request.get(`/goods/${route.params.id}`)
     goods.value = res.data
     isFavorited.value = res.data.is_favorited || false
     comments.value = res.data.comments || []
   } catch (e) {
+    error.value = '商品加载失败，请刷新重试'
     console.error(e)
   } finally {
     loading.value = false
@@ -204,5 +211,11 @@ onMounted(() => fetchGoods())
   display: flex;
   gap: 10px;
   margin-top: 15px;
+}
+
+.error-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #f56c6c;
 }
 </style>

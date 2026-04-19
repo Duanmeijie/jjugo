@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { request } from '@/utils/request'
+import { ref, computed, watch } from 'vue'
+import request from '@/utils/request'
+import router from '@/router'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('token') || '')
   const userInfo = ref(null)
+
   const isLoggedIn = computed(() => !!token.value)
 
   async function fetchUserInfo() {
@@ -14,6 +16,7 @@ export const useUserStore = defineStore('user', () => {
       userInfo.value = res.data
     } catch (e) {
       console.error(e)
+      logout()
     }
   }
 
@@ -28,9 +31,11 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('token')
   }
 
-  if (token.value) {
-    fetchUserInfo()
+  async function initialize() {
+    if (token.value) {
+      await fetchUserInfo()
+    }
   }
 
-  return { token, userInfo, isLoggedIn, setToken, logout, fetchUserInfo }
+  return { token, userInfo, isLoggedIn, setToken, logout, fetchUserInfo, initialize }
 })

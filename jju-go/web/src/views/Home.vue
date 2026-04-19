@@ -16,7 +16,24 @@
         </el-button>
       </div>
 
-      <el-row :gutter="20" class="goods-grid" v-loading="loading">
+      <div v-if="loading" class="loading-state">
+        <el-skeleton :rows="3" animated />
+        <p>加载中...</p>
+      </div>
+
+      <div v-else-if="error" class="error-state">
+        <p>{{ error }}</p>
+        <el-button type="primary" @click="fetchGoods(true)">刷新重试</el-button>
+      </div>
+
+      <div v-else-if="goodsList.length === 0" class="empty-state">
+        <p>暂无商品，去发布一个吧</p>
+        <RouterLink to="/publish">
+          <el-button type="primary">发布商品</el-button>
+        </RouterLink>
+      </div>
+
+      <el-row :gutter="20" class="goods-grid" v-else>
         <el-col :span="6" v-for="goods in goodsList" :key="goods.id">
           <RouterLink :to="`/goods/${goods.id}`" class="goods-card">
             <el-image :src="goods.pics[0]" fit="cover" class="goods-image" />
@@ -37,7 +54,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { request } from '@/utils/request'
 
@@ -50,8 +67,9 @@ const limit = ref(12)
 const total = ref(0)
 const loading = ref(false)
 const loadingMore = ref(false)
+const error = ref('')
 
-const hasMore = () => goodsList.value.length < total.value
+const hasMore = computed(() => goodsList.value.length < total.value)
 
 const fetchCategories = async () => {
   try {
@@ -66,6 +84,7 @@ const fetchGoods = async (reset = false) => {
   if (reset) {
     page.value = 1
     goodsList.value = []
+    error.value = ''
   }
   loading.value = true
   try {
@@ -74,12 +93,13 @@ const fetchGoods = async (reset = false) => {
     if (categoryId.value) params.category_id = categoryId.value
     const res = await request.get('/goods', { params })
     if (reset) {
-      goodsList.value = res.data.list
+      goodsList.value = res.data.list || []
     } else {
-      goodsList.value.push(...res.data.list)
+      goodsList.value.push(...(res.data.list || []))
     }
-    total.value = res.data.total
+    total.value = res.data.total || 0
   } catch (e) {
+    error.value = '加载失败，请刷新重试'
     console.error(e)
   } finally {
     loading.value = false
@@ -111,6 +131,26 @@ onMounted(() => {
   gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 20px;
+}
+
+.loading-state, .empty-state, .error-state {
+  text-align: center;
+  padding: 60px 20px;
+  p {
+    margin-bottom: 20px;
+    color: #666;
+  }
+}
+
+.empty-state {
+  p {
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+}
+
+.error-state {
+  color: #f56c6c;
 }
 
 .goods-grid {

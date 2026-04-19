@@ -23,19 +23,33 @@ const router = createRouter({
   routes
 })
 
+const whiteList = ['/login', '/register']
+
 router.beforeEach(async (to, from, next) => {
-  const userStore = useUserStore()
+  const token = localStorage.getItem('token')
   
-  if (to.meta.requiresAuth && !userStore.isLoggedIn) {
+  if (to.meta.requiresAuth && !token) {
     next('/login')
   } else if (to.meta.requiresAdmin) {
-    if (!userStore.isLoggedIn) {
+    if (!token) {
       next('/login')
-    } else if (!userStore.userInfo || userStore.userInfo.role !== 'admin') {
-      next('/')
     } else {
-      next()
+      try {
+        const userStore = useUserStore()
+        if (!userStore.userInfo) {
+          await userStore.fetchUserInfo()
+        }
+        if (!userStore.userInfo || userStore.userInfo.role !== 'admin') {
+          next('/')
+        } else {
+          next()
+        }
+      } catch (e) {
+        next('/login')
+      }
     }
+  } else if (!token && !whiteList.includes(to.path)) {
+    next()
   } else {
     next()
   }

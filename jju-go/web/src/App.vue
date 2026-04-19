@@ -43,13 +43,16 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
 const router = useRouter()
 
-userStore.fetchUserInfo()
+onMounted(async () => {
+  await userStore.initialize()
+})
 
 const handleCommand = (command) => {
   if (command === 'profile') {

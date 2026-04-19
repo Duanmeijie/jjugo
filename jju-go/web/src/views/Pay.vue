@@ -69,6 +69,7 @@ const fetchOrder = async () => {
 
 const handlePay = async () => {
   paying.value = true
+  await new Promise(resolve => setTimeout(resolve, 1500))
   try {
     const res = await request.post(`/orders/${orderId}/pay`)
     tradeCode.value = res.data.trade_code
