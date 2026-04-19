@@ -1,5 +1,5 @@
 const validateStudentId = (id) => {
-  return /^\d{10}$/.test(id);
+  return /^\d{11}$/.test(id);
 };
 
 const validatePhone = (phone) => {
@@ -7,7 +7,11 @@ const validatePhone = (phone) => {
 };
 
 const validatePassword = (pwd) => {
-  return pwd && pwd.length >= 6 && pwd.length <= 20;
+  return /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{3,15}$/.test(pwd);
 };
 
-module.exports = { validateStudentId, validatePhone, validatePassword };
+const validateNickname = (nickname) => {
+  return /^[\u4e00-\u9fa5a-zA-Z0-9]{1,20}$/.test(nickname);
+};
+
+module.exports = { validateStudentId, validatePhone, validatePassword, validateNickname };

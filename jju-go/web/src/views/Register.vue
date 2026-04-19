@@ -5,16 +5,16 @@
         <h2>注册</h2>
         <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
           <el-form-item label="学号" prop="student_id">
-            <el-input v-model="form.student_id" placeholder="10位数字学号" />
+            <el-input v-model="form.student_id" placeholder="11位数字学号" />
           </el-form-item>
           <el-form-item label="手机号" prop="phone">
             <el-input v-model="form.phone" placeholder="11位手机号" />
           </el-form-item>
           <el-form-item label="密码" prop="password">
-            <el-input v-model="form.password" type="password" placeholder="6-20位密码" />
+            <el-input v-model="form.password" type="password" placeholder="3-15位密码" />
           </el-form-item>
           <el-form-item label="昵称" prop="nickname">
-            <el-input v-model="form.nickname" placeholder="2-20位昵称" />
+            <el-input v-model="form.nickname" placeholder="最多20位昵称" />
           </el-form-item>
           <el-form-item>
             <el-button type="primary" style="width: 100%" @click="submit" :loading="loading">注册</el-button>
@@ -41,8 +41,8 @@ const loading = ref(false)
 const form = ref({ student_id: '', phone: '', password: '', nickname: '' })
 
 const validateStudentId = (rule, value, callback) => {
-  if (!/^\d{10}$/.test(value)) {
-    callback(new Error('学号必须为10位数字'))
+  if (!/^\d{11}$/.test(value)) {
+    callback(new Error('学号必须为11位数字'))
   } else {
     callback()
   }
@@ -56,11 +56,27 @@ const validatePhone = (rule, value, callback) => {
   }
 }
 
+const validatePassword = (rule, value, callback) => {
+  if (!/^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{3,15}$/.test(value)) {
+    callback(new Error('密码3-15位，支持字母/数字/特殊字符'))
+  } else {
+    callback()
+  }
+}
+
+const validateNickname = (rule, value, callback) => {
+  if (!/^[\u4e00-\u9fa5a-zA-Z0-9]{1,20}$/.test(value)) {
+    callback(new Error('昵称支持中英文，最多20位'))
+  } else {
+    callback()
+  }
+}
+
 const rules = {
   student_id: [{ required: true, validator: validateStudentId, trigger: 'blur' }],
   phone: [{ required: true, validator: validatePhone, trigger: 'blur' }],
-  password: [{ required: true, min: 6, max: 20, message: '密码6-20位', trigger: 'blur' }],
-  nickname: [{ required: true, min: 2, max: 20, message: '昵称2-20位', trigger: 'blur' }]
+  password: [{ required: true, validator: validatePassword, trigger: 'blur' }],
+  nickname: [{ required: true, validator: validateNickname, trigger: 'blur' }]
 }
 
 const submit = async () => {

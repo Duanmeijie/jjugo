@@ -4,23 +4,23 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { query } = require('../config/db');
 const { verifyToken } = require('../middleware/auth');
-const { validateStudentId, validatePhone, validatePassword } = require('../utils/validator');
+const { validateStudentId, validatePhone, validatePassword, validateNickname } = require('../utils/validator');
 
 router.post('/register', async (req, res) => {
   try {
     const { student_id, phone, password, nickname } = req.body;
 
     if (!validateStudentId(student_id)) {
-      return res.status(400).json({ code: 400, msg: '学号必须为10位数字' });
+      return res.status(400).json({ code: 400, msg: '学号必须为11位数字' });
     }
     if (!validatePhone(phone)) {
       return res.status(400).json({ code: 400, msg: '手机号格式错误' });
     }
     if (!validatePassword(password)) {
-      return res.status(400).json({ code: 400, msg: '密码长度6-20位' });
+      return res.status(400).json({ code: 400, msg: '密码3-15位，支持字母/数字/特殊字符' });
     }
-    if (!nickname || nickname.length < 2 || nickname.length > 20) {
-      return res.status(400).json({ code: 400, msg: '昵称长度为2-20位' });
+    if (!validateNickname(nickname)) {
+      return res.status(400).json({ code: 400, msg: '昵称支持中英文，最多20位' });
     }
 
     const existingUser = await query(
@@ -132,16 +132,16 @@ router.post('/admin/setup', async (req, res) => {
     const { student_id, phone, password, nickname } = req.body;
 
     if (!validateStudentId(student_id)) {
-      return res.status(400).json({ code: 400, msg: '学号必须为10位数字' });
+      return res.status(400).json({ code: 400, msg: '学号必须为11位数字' });
     }
     if (!validatePhone(phone)) {
       return res.status(400).json({ code: 400, msg: '手机号格式错误' });
     }
     if (!validatePassword(password)) {
-      return res.status(400).json({ code: 400, msg: '密码长度6-20位' });
+      return res.status(400).json({ code: 400, msg: '密码3-15位，支持字母/数字/特殊字符' });
     }
-    if (!nickname || nickname.length < 2 || nickname.length > 20) {
-      return res.status(400).json({ code: 400, msg: '昵称长度为2-20位' });
+    if (!validateNickname(nickname)) {
+      return res.status(400).json({ code: 400, msg: '昵称支持中英文，最多20位' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
