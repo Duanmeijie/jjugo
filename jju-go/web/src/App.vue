@@ -39,6 +39,7 @@
         <p>&copy; 2026 九院易购 - 校园二手交易平台</p>
       </div>
     </footer>
+    <ChatBot />
   </div>
 </template>
 
@@ -46,6 +47,7 @@
 import { onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
+import ChatBot from '@/components/ChatBot.vue'
 
 const userStore = useUserStore()
 const router = useRouter()
