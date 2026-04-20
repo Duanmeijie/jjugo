@@ -1,11 +1,11 @@
 <template>
   <div class="chatbot-container">
-    <div class="chatbot-float" @click="toggleChat" v-if="!isOpen">
+    <div class="chatbot-float glass" @click="toggleChat" v-if="!isOpen">
       <el-icon :size="28"><ChatDotRound /></el-icon>
     </div>
 
     <transition name="slide">
-      <div class="chatbot-panel" v-if="isOpen">
+      <div class="chatbot-panel glass" v-if="isOpen">
         <div class="chatbot-header">
           <div class="header-left">
             <span class="title">九院小助手</span>
@@ -19,18 +19,18 @@
             <div class="robot-avatar">
               <el-icon :size="24"><Service /></el-icon>
             </div>
-            <div class="message-bubble">您好！我是九院小助手，请问有什么可以帮您？</div>
+            <div class="message-bubble bot-bubble">您好！我是九院小助手，请问有什么可以帮您？</div>
           </div>
 
           <div class="hot-questions" v-if="hotQuestions.length && messages.length <= 1">
-            <el-tag
+            <div
               v-for="q in hotQuestions"
               :key="q.id"
-              class="hot-tag"
+              class="hot-tag glass"
               @click="sendQuickQuestion(q.question)"
             >
               {{ q.question }}
-            </el-tag>
+            </div>
           </div>
 
           <div
@@ -46,8 +46,10 @@
                 <div class="model-name" :class="msg.source">
                   {{ msg.source === 'ai' ? (msg.modelName || 'AI') : '本地智能模式' }}
                 </div>
-                <div class="message-bubble">
-                  <span v-if="msg.typing">正在思考...</span>
+                <div class="message-bubble bot-bubble">
+                  <span v-if="msg.typing" class="typing-indicator">
+                    <span></span><span></span><span></span>
+                  </span>
                   <span v-else>{{ msg.text }}</span>
                 </div>
               </div>
@@ -59,7 +61,7 @@
         </div>
 
         <div class="chatbot-input">
-          <el-select v-model="selectedModel" placeholder="选择模型" class="model-select" :disabled="loading">
+          <el-select v-model="selectedModel" placeholder="选择模型" class="model-select glass-input" :disabled="loading">
             <el-option label="自动推荐" value="" />
             <el-option label="MiniMax M2.5 Free" value="minimax-m2.5-free" />
             <el-option label="GLM-4 Flash" value="glm-4-flash" />
@@ -71,13 +73,9 @@
             placeholder="输入问题，AI 智能客服为您解答..."
             @keyup.enter="sendMessage"
             :disabled="loading"
+            class="glass-input"
           />
-          <el-button
-            type="primary"
-            :icon="Position"
-            @click="sendMessage"
-            :loading="loading"
-          />
+          <GlassButton variant="primary" :icon="Position" @click="sendMessage" :loading="loading" />
         </div>
       </div>
     </transition>
@@ -86,8 +84,9 @@
 
 <script setup>
 import { ref, nextTick, onMounted } from 'vue'
-import { ChatDotRound, Close, Service, Position, Lightning } from '@element-plus/icons-vue'
+import { ChatDotRound, Close, Service, Position } from '@element-plus/icons-vue'
 import axios from 'axios'
+import GlassButton from './GlassButton.vue'
 
 const isOpen = ref(false)
 const inputMessage = ref('')
@@ -221,55 +220,61 @@ onMounted(() => {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: #ff6b6b;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
-  transition: transform 0.3s;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+  transition: transform 0.3s, box-shadow 0.3s;
 
   &:hover {
     transform: scale(1.1);
+    box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5);
   }
 }
 
 .chatbot-panel {
-  width: 350px;
-  height: 500px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  width: 380px;
+  height: 540px;
+  border-radius: 20px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
 .chatbot-header {
-  height: 50px;
-  background: #ff6b6b;
+  height: 60px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
-  padding: 0 16px;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
 
   .header-left {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }
 
   .title {
-    font-size: 16px;
-    font-weight: bold;
+    font-size: 17px;
+    font-weight: 600;
   }
 
   .close-btn {
     cursor: pointer;
+    padding: 4px;
+    border-radius: 8px;
+    transition: background 0.2s;
+    
     &:hover {
-      opacity: 0.8;
+      background: rgba(255, 255, 255, 0.2);
     }
   }
 }
@@ -278,64 +283,59 @@ onMounted(() => {
   flex: 1;
   padding: 16px;
   overflow-y: auto;
-  background: #f5f7fa;
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .welcome-message {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 16px;
 }
 
 .robot-avatar {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ff6b6b, #ffa8a8);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .message-bubble {
-  max-width: 80%;
-  padding: 10px 14px;
-  border-radius: 12px;
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 18px;
   font-size: 14px;
   line-height: 1.5;
   word-wrap: break-word;
 }
 
-.error-bubble {
-  background: #fee;
-  color: #d00;
-  border: 1px solid #fcc;
+.bot-bubble {
+  background: rgba(255, 255, 255, 0.9);
+  color: #1a1a2e;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.user-bubble {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .model-name {
   font-size: 11px;
-  color: #999;
+  color: #98989D;
   text-align: right;
   
-  &.ai {
-    color: #999;
-  }
-  
-  &.local {
-    color: #409eff;
-  }
-  
-  &.error {
-    color: #f56c6c;
-  }
-}
-
-.user-bubble {
-  background: #e0e0e0;
-  color: #333;
+  &.ai { color: #667eea; }
+  &.local { color: #764ba2; }
+  &.error { color: #FF3B30; }
 }
 
 .bot-message-wrapper {
@@ -348,11 +348,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-
-.message-source {
-  display: flex;
-  align-items: center;
 }
 
 .message-item {
@@ -377,30 +372,63 @@ onMounted(() => {
 }
 
 .hot-tag {
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
   cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(102, 126, 234, 0.15);
+  
   &:hover {
-    background: #ff6b6b;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: #fff;
-    border-color: #ff6b6b;
+    border-color: transparent;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
   }
 }
 
 .chatbot-input {
-  padding: 12px;
-  background: #fff;
-  border-top: 1px solid #eee;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.5);
+  border-top: 1px solid rgba(102, 126, 234, 0.1);
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 
   .model-select {
-    width: 130px;
+    width: 120px;
     flex-shrink: 0;
   }
 
   .el-input {
     flex: 1;
   }
+}
+
+.typing-indicator {
+  display: inline-flex;
+  gap: 4px;
+  
+  span {
+    width: 6px;
+    height: 6px;
+    background: #667eea;
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out;
+    
+    &:nth-child(1) { animation-delay: 0s; }
+    &:nth-child(2) { animation-delay: 0.2s; }
+    &:nth-child(3) { animation-delay: 0.4s; }
+  }
+}
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-6px); }
 }
 
 .slide-enter-active,
@@ -411,13 +439,13 @@ onMounted(() => {
 .slide-enter-from,
 .slide-leave-to {
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateY(20px) scale(0.95);
 }
 
 @media (max-width: 768px) {
   .chatbot-panel {
     width: 100%;
-    height: 70%;
+    height: 100%;
     border-radius: 0;
   }
 
