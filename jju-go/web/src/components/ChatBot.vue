@@ -7,7 +7,10 @@
     <transition name="slide">
       <div class="chatbot-panel" v-if="isOpen">
         <div class="chatbot-header">
-          <span class="title">九院小助手</span>
+          <div class="header-left">
+            <span class="title">九院小助手</span>
+            <el-tag type="success" size="small" effect="dark">AI 增强版</el-tag>
+          </div>
           <el-icon @click="toggleChat" class="close-btn"><Close /></el-icon>
         </div>
 
@@ -35,12 +38,25 @@
             :key="index"
             :class="['message-item', msg.isUser ? 'user' : 'bot']"
           >
-            <div class="robot-avatar" v-if="!msg.isUser">
-              <el-icon :size="20"><Robot /></el-icon>
+            <div class="bot-message-wrapper" v-if="!msg.isUser">
+              <div class="robot-avatar">
+                <el-icon :size="20"><Service /></el-icon>
+              </div>
+              <div class="message-content">
+                <div class="message-source" v-if="msg.source === 'ai'">
+                  <el-tag type="success" size="small">
+                    <el-icon :size="12"><Lightning /></el-icon>
+                    AI
+                  </el-tag>
+                </div>
+                <div class="message-bubble">
+                  <span v-if="msg.typing">正在思考...</span>
+                  <span v-else>{{ msg.text }}</span>
+                </div>
+              </div>
             </div>
-            <div class="message-bubble">
-              <span v-if="msg.typing">typing...</span>
-              <span v-else>{{ msg.text }}</span>
+            <div class="message-bubble user-bubble" v-else>
+              <span>{{ msg.text }}</span>
             </div>
           </div>
         </div>
@@ -48,7 +64,7 @@
         <div class="chatbot-input">
           <el-input
             v-model="inputMessage"
-            placeholder="请输入问题..."
+            placeholder="输入问题，AI 智能客服为您解答..."
             @keyup.enter="sendMessage"
             :disabled="loading"
           />
@@ -66,7 +82,7 @@
 
 <script setup>
 import { ref, nextTick, onMounted } from 'vue'
-import { ChatDotRound, Close, Service, Position } from '@element-plus/icons-vue'
+import { ChatDotRound, Close, Service, Position, Lightning } from '@element-plus/icons-vue'
 import axios from 'axios'
 
 const isOpen = ref(false)
@@ -108,16 +124,17 @@ const addUserMessage = (text) => {
   scrollToBottom()
 }
 
-const addBotMessage = (text, typing = false) => {
-  messages.value.push({ text, isUser: false, typing })
+const addBotMessage = (text, typing = false, source = 'local') => {
+  messages.value.push({ text, isUser: false, typing, source })
   scrollToBottom()
 }
 
-const updateLastBotMessage = (text) => {
+const updateLastBotMessage = (text, source = 'local') => {
   const lastMsg = messages.value[messages.value.length - 1]
   if (lastMsg && !lastMsg.isUser) {
     lastMsg.text = text
     lastMsg.typing = false
+    lastMsg.source = source
   }
   scrollToBottom()
 }
@@ -133,25 +150,26 @@ const sendMessage = () => {
 
 const sendToBot = async (text) => {
   loading.value = true
-  addBotMessage('', true)
+  addBotMessage('', true, 'local')
 
   try {
     const res = await axios.post('/api/chatbot/ask', { message: text })
     if (res.data.code === 200) {
       const answer = res.data.data.answer
-      await typeWriterEffect(answer)
+      const source = res.data.data.source || 'local'
+      await typeWriterEffect(answer, source)
     }
   } catch (err) {
-    updateLastBotMessage('抱歉，服务暂时不可用，请稍后再试。')
+    updateLastBotMessage('抱歉，服务暂时不可用，请稍后再试。', 'local')
   } finally {
     loading.value = false
   }
 }
 
-const typeWriterEffect = async (text) => {
+const typeWriterEffect = async (text, source = 'local') => {
   const lastMsg = messages.value[messages.value.length - 1]
   if (!lastMsg || lastMsg.isUser) {
-    addBotMessage('', true)
+    addBotMessage('', true, source)
   }
 
   let displayed = ''
@@ -163,6 +181,7 @@ const typeWriterEffect = async (text) => {
     if (currentMsg) {
       currentMsg.text = displayed
       currentMsg.typing = false
+      currentMsg.source = source
     }
     await new Promise(resolve => setTimeout(resolve, 30))
   }
@@ -219,6 +238,12 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
 
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   .title {
     font-size: 16px;
     font-weight: bold;
@@ -267,29 +292,35 @@ onMounted(() => {
   word-wrap: break-word;
 }
 
-.user .message-bubble {
+.user-bubble {
   background: #e0e0e0;
   color: #333;
 }
 
-.bot .message-bubble {
-  background: #fff;
-  color: #333;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+.bot-message-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.message-source {
+  display: flex;
+  align-items: center;
 }
 
 .message-item {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
   margin-bottom: 12px;
 
   &.user {
     justify-content: flex-end;
-
-    .message-bubble {
-      background: #e0e0e0;
-    }
   }
 
   &.bot {
