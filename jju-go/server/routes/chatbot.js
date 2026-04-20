@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { query } = require('../config/db');
-const axios = require('axios');
 
-const AI_SYSTEM_PROMPT = '你是"九院易购"校园二手交易平台的智能客服助手。平台是九江学院学生专用的二手交易平台，支持商品发布、线下交易、交易码核验等功能。请用简洁友好的中文回答，控制在100字以内。如果用户问非平台相关问题，礼貌引导回平台业务。';
 const AI_TIMEOUT = 8000;
 
 let qaCache = [];
@@ -24,9 +22,7 @@ async function loadQACache() {
 function matchKeywords(userInput, keywords) {
     const input = userInput.toLowerCase();
     const keywordList = keywords.split(',').map(k => k.trim().toLowerCase()).filter(k => k);
-    const isMatch = keywordList.some(keyword => input.includes(keyword));
-    console.log(`[ChatBot] Matching "${userInput}" with keywords [${keywords}]: ${isMatch}`);
-    return isMatch;
+    return keywordList.some(keyword => input.includes(keyword));
 }
 
 function findBestAnswer(userMessage) {
@@ -37,85 +33,58 @@ function findBestAnswer(userMessage) {
 
     for (const qa of qaCache) {
         if (matchKeywords(trimmed, qa.keywords)) {
-            console.log(`[ChatBot] Matched: ${qa.question} (priority: ${qa.priority})`);
             if (!bestMatch || qa.priority > bestMatch.priority) {
                 bestMatch = qa;
             }
         }
     }
 
-    console.log(`[ChatBot] Best match: ${bestMatch ? bestMatch.question : 'null'}, priority: ${bestMatch ? bestMatch.priority : 'N/A'}`);
     return bestMatch;
 }
 
-async function callAI(message) {
-    const apiKey = process.env.OPENCODE_API_KEY;
-    const apiUrl = process.env.OPENCODE_API_URL;
-    const model = process.env.AI_MODEL;
+function generateSmartReply(userMessage) {
+    const input = userMessage.toLowerCase().trim();
+    
+    const generalReplies = [
+        '您好！我是九院小助手，请问有什么可以帮您？',
+        '感谢您的咨询！请问还有什么可以帮助您的？',
+        '收到！如果您有关于平台交易的问题，我可以为您解答。',
+        '明白！九院易购是九江学院专属的二手交易平台，欢迎随时咨询。',
+    ];
 
-    console.log('[ChatBot] AI Config - API Key:', apiKey ? 'set' : 'missing', 'API URL:', apiUrl ? 'set' : 'missing', 'Model:', model || 'missing');
+    const platformGuides = {
+        '怎么用': '九院易购使用很简单：1. 注册登录 2. 点击"发布"上传商品 3. 买家下单后线下交易 4. 使用交易码核验完成交易。',
+        '是什么': '九院易购是九江学院学生专用的二手交易平台，可以买卖二手书、生活用品、电子产品等。支持线下交易和交易码核验，安全便捷！',
+        '如何': '您可以：1. 访问首页浏览商品 2. 点击"发布"按钮上传商品 3. 在"个人中心"管理订单和收藏。有什么具体问题吗？',
+        '可以': '可以的！平台支持二手商品交易，包括书籍、电子产品、生活用品等。交易需在线下完成，建议在校园内安全场所交易。',
+        '能': '能的！您可以在这里买卖二手商品。发布商品完全免费，交易不收取手续费。',
+        '好': '很高兴为您服务！请问还有什么问题？',
+        '谢谢': '不客气！如有其他问题随时问我。',
+        '请问': '请问有什么可以帮助您？',
+        '？': '您好，请问想问什么？',
+        '吗': '您可以换个方式描述您的问题，我会尽力帮您解答。',
+    };
 
-    if (!apiKey || !apiUrl || !model) {
-        console.error('[ChatBot] AI configuration missing, cannot call AI');
-        return null;
+    for (const [key, reply] of Object.entries(platformGuides)) {
+        if (input.includes(key)) {
+            return reply;
+        }
     }
 
-    try {
-        console.log('[ChatBot] Calling AI API with message:', message);
-        const response = await axios.post(
-            apiUrl,
-            {
-                model: model,
-                messages: [
-                    { role: 'system', content: AI_SYSTEM_PROMPT },
-                    { role: 'user', content: message }
-                ],
-                max_tokens: 300,
-                temperature: 0.7
-            },
-            {
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                timeout: AI_TIMEOUT
-            }
-        );
-
-        console.log('[ChatBot] AI API response status:', response.status);
-        console.log('[ChatBot] AI API response data:', JSON.stringify(response.data, null, 2));
-
-        if (response.data && response.data.choices && response.data.choices[0]) {
-            return response.data.choices[0].message.content;
-        }
-        console.error('[ChatBot] AI response format invalid');
-        return null;
-    } catch (err) {
-        if (err.response) {
-            console.error('[ChatBot] AI API error status:', err.response.status);
-            console.error('[ChatBot] AI API error data:', err.response.data);
-            if (err.response.status === 401) {
-                console.error('[ChatBot] AI API Key is invalid');
-            } else if (err.response.status === 429) {
-                console.error('[ChatBot] AI API rate limit exceeded');
-            }
-        } else if (err.code === 'ECONNABORTED') {
-            console.error('[ChatBot] AI API timeout after 8 seconds');
-        } else {
-            console.error('[ChatBot] AI API network error:', err.message);
-        }
-        return null;
+    if (input.length < 4) {
+        return generalReplies[Math.floor(Math.random() * generalReplies.length)];
     }
+
+    return null;
 }
 
-const DEFAULT_ANSWER = '抱歉，我可能没理解您的问题。您可以尝试咨询：如何发布商品、交易码怎么用、忘记密码怎么办。或联系管理员人工处理。';
+const DEFAULT_ANSWER = '抱歉，我可能没理解您的问题。九院易购是九江学院二手交易平台，您可以尝试咨询：如何发布商品、交易码怎么用、忘记密码怎么办、怎么联系卖家等。或联系管理员人工处理。';
 
 router.post('/ask', async (req, res) => {
     try {
         await loadQACache();
 
         const { message } = req.body;
-        console.log('[ChatBot] Received ask request:', message);
 
         if (!message || typeof message !== 'string') {
             return res.status(400).json({ code: 400, msg: '请输入问题内容' });
@@ -124,10 +93,7 @@ router.post('/ask', async (req, res) => {
         const trimmed = message.trim();
         const matchedQA = findBestAnswer(trimmed);
 
-        console.log('[ChatBot] Local match result:', matchedQA ? `${matchedQA.question} (priority: ${matchedQA.priority})` : 'none');
-
         if (matchedQA && matchedQA.priority >= 5) {
-            console.log('[ChatBot] Returning high-priority local answer');
             return res.status(200).json({
                 code: 200,
                 data: {
@@ -139,26 +105,20 @@ router.post('/ask', async (req, res) => {
             });
         }
 
-        console.log('[ChatBot] No high-priority match, calling AI...');
-        const aiAnswer = await callAI(trimmed);
-
-        if (aiAnswer) {
-            console.log('[ChatBot] AI answer received, returning AI answer');
+        const smartReply = generateSmartReply(trimmed);
+        if (smartReply) {
             return res.status(200).json({
                 code: 200,
                 data: {
-                    answer: aiAnswer,
+                    answer: smartReply,
                     matched: matchedQA ? true : false,
                     question: trimmed,
-                    source: 'ai'
+                    source: 'local'
                 }
             });
         }
 
-        console.log('[ChatBot] AI call failed, checking fallback options...');
-
         if (matchedQA) {
-            console.log('[ChatBot] Returning low-priority local answer as fallback');
             return res.status(200).json({
                 code: 200,
                 data: {
@@ -170,7 +130,6 @@ router.post('/ask', async (req, res) => {
             });
         }
 
-        console.log('[ChatBot] All options failed, returning default answer');
         return res.status(200).json({
             code: 200,
             data: {
@@ -214,12 +173,12 @@ router.get('/hot-questions', async (req, res) => {
 });
 
 router.get('/mode', (req, res) => {
-    const aiEnabled = !!(process.env.OPENCODE_API_KEY && process.env.OPENCODE_API_URL);
     res.status(200).json({
         code: 200,
         data: {
-            ai_enabled: aiEnabled,
-            model: process.env.AI_MODEL || null
+            ai_enabled: false,
+            model: 'local-enhanced',
+            mode: '智能匹配 + 智能回复'
         }
     });
 });
