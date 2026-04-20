@@ -43,7 +43,9 @@
                 <el-icon :size="20"><Service /></el-icon>
               </div>
               <div class="message-content">
-                <div class="model-name">{{ msg.modelName || '本地离线模式' }}</div>
+                <div class="model-name" :class="msg.source">
+                  {{ msg.source === 'ai' ? (msg.modelName || 'AI') : '本地智能模式' }}
+                </div>
                 <div class="message-bubble">
                   <span v-if="msg.typing">正在思考...</span>
                   <span v-else>{{ msg.text }}</span>
@@ -168,16 +170,10 @@ const sendToBot = async (text) => {
     })
     if (res.data.code === 200) {
       const data = res.data.data
-      const answer = data.answer
-      const modelName = data.modelName || '未知模型'
-      const success = data.success !== false
-      
-      if (success) {
-        const source = data.source || 'ai'
-        await typeWriterEffect(answer, source, modelName)
-      } else {
-        updateLastBotMessage(answer || 'AI模型未响应，请检查网络或切换模型', 'error', modelName)
-      }
+      const reply = data.reply || data.answer || '服务暂不可用'
+      const modelName = data.modelName || '未知'
+      const source = data.source || 'local'
+      await typeWriterEffect(reply, source, modelName)
     }
   } catch (err) {
     updateLastBotMessage('网络错误，请稍后再试', 'error', '连接失败')
@@ -323,6 +319,18 @@ onMounted(() => {
   font-size: 11px;
   color: #999;
   text-align: right;
+  
+  &.ai {
+    color: #999;
+  }
+  
+  &.local {
+    color: #409eff;
+  }
+  
+  &.error {
+    color: #f56c6c;
+  }
 }
 
 .user-bubble {
