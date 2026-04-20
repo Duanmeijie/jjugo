@@ -59,11 +59,10 @@
         <div class="chatbot-input">
           <el-select v-model="selectedModel" placeholder="选择模型" class="model-select" :disabled="loading">
             <el-option label="自动推荐" value="" />
-            <el-option label="MiniMax M2.1 Free" value="minimax-m2.1-free" />
-            <el-option label="Kimi K2.5 Free" value="kimi-k2.5-free" />
-            <el-option label="Big Pickle" value="big-pickle" />
-            <el-option label="GLM-4.7 Flash" value="glm-4.7-flash" />
+            <el-option label="MiniMax M2.5 Free" value="minimax-m2.5-free" />
+            <el-option label="GLM-4 Flash" value="glm-4-flash" />
             <el-option label="Qwen Turbo" value="qwen-turbo" />
+            <el-option label="Nemotron-3-8B" value="nemotron-3-8b" />
           </el-select>
           <el-input
             v-model="inputMessage"
@@ -168,19 +167,26 @@ const sendToBot = async (text) => {
       model: selectedModel.value || undefined
     })
     if (res.data.code === 200) {
-      const answer = res.data.data.answer
-      const source = res.data.data.source || 'local'
-      const modelName = res.data.data.modelName || '本地离线模式'
-      await typeWriterEffect(answer, source, modelName)
+      const data = res.data.data
+      const answer = data.answer
+      const modelName = data.modelName || '未知模型'
+      const success = data.success !== false
+      
+      if (success) {
+        const source = data.source || 'ai'
+        await typeWriterEffect(answer, source, modelName)
+      } else {
+        updateLastBotMessage(answer || 'AI模型未响应，请检查网络或切换模型', 'error', modelName)
+      }
     }
   } catch (err) {
-    updateLastBotMessage('抱歉，服务暂时不可用，请稍后再试。', 'local', '本地离线模式')
+    updateLastBotMessage('网络错误，请稍后再试', 'error', '连接失败')
   } finally {
     loading.value = false
   }
 }
 
-const typeWriterEffect = async (text, source = 'local', modelName = '本地离线模式') => {
+const typeWriterEffect = async (text, source = 'local', modelName = '未知模型') => {
   const lastMsg = messages.value[messages.value.length - 1]
   if (!lastMsg || lastMsg.isUser) {
     addBotMessage('', true, source, modelName)
@@ -196,6 +202,7 @@ const typeWriterEffect = async (text, source = 'local', modelName = '本地离�
       currentMsg.text = displayed
       currentMsg.typing = false
       currentMsg.source = source
+      currentMsg.modelName = modelName
     }
     await new Promise(resolve => setTimeout(resolve, 30))
   }
@@ -304,6 +311,18 @@ onMounted(() => {
   font-size: 14px;
   line-height: 1.5;
   word-wrap: break-word;
+}
+
+.error-bubble {
+  background: #fee;
+  color: #d00;
+  border: 1px solid #fcc;
+}
+
+.model-name {
+  font-size: 11px;
+  color: #999;
+  text-align: right;
 }
 
 .user-bubble {
