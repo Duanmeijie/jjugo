@@ -1,4 +1,4 @@
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 require('dotenv').config({ path: __dirname + '/../.env' });
 
 const pool = mysql.createPool({
@@ -12,16 +12,13 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-const query = (sql, params) => {
-  return new Promise((resolve, reject) => {
-    pool.query(sql, params, (err, results) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(results);
-      }
-    });
-  });
+const query = async (sql, params) => {
+  const [rows] = await pool.query(sql, params);
+  return rows;
 };
 
-module.exports = { pool, query };
+const getConnection = async () => {
+  return await pool.getConnection();
+};
+
+module.exports = { pool, query, getConnection };

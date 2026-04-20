@@ -10,7 +10,7 @@
  * cd server && npm i @faker-js/faker axios bcryptjs
  */
 
-const { pool, query } = require('../config/db');
+const { pool, query, getConnection } = require('../config/db');
 const { faker } = require('@faker-js/faker');
 const bcrypt = require('bcryptjs');
 const axios = require('axios');
@@ -31,7 +31,7 @@ async function generateUsers(count = 10) {
     const avatarUrl = await getImageUrl(i);
     users.push({
       student_id: studentId,
-      phone: faker.phone.number('13#########'),
+      phone: '138' + String(Math.floor(Math.random() * 100000000)).padStart(8, '0'),
       password: hashedPassword,
       nickname: faker.internet.username(),
       avatar: avatarUrl,
@@ -109,7 +109,7 @@ async function checkDataExists() {
 }
 
 async function seed() {
-  const connection = await pool.getConnection();
+  const connection = await getConnection();
   try {
     const hasData = await checkDataExists();
     if (hasData && !FORCE) {
@@ -178,12 +178,32 @@ async function seed() {
     console.log('\n💡 使用 --force 强制重置: node scripts/seed.js --force');
 
   } catch (err) {
-    await connection.rollback();
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackErr) {
+        console.error('回滚失败:', rollbackErr.message);
+      }
+    }
     console.error('❌ 注入失败:', err.message);
     throw err;
   } finally {
-    connection.release();
+    if (connection) {
+      try {
+        connection.release();
+      } catch (releaseErr) {
+        console.error('释放连接失败:', releaseErr.message);
+      }
+    }
   }
 }
 
-seed().catch(console.error);
+seed()
+  .then(() => {
+    console.log('脚本执行完成');
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('脚本执行失败:', err.message);
+    process.exit(1);
+  });

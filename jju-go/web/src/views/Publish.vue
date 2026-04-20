@@ -1,15 +1,15 @@
 <template>
   <div class="publish page">
     <div class="container">
-      <el-card>
+      <GlassCard>
         <h2>发布商品</h2>
         <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
           <el-form-item label="标题" prop="title">
-            <el-input v-model="form.title" placeholder="2-100字符" />
+            <el-input v-model="form.title" placeholder="2-100字符" class="glass-input" />
           </el-form-item>
           
           <el-form-item label="分类" prop="category_id">
-            <el-select v-model="form.category_id" placeholder="选择分类">
+            <el-select v-model="form.category_id" placeholder="选择分类" class="glass-input">
               <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.id" />
             </el-select>
           </el-form-item>
@@ -19,7 +19,7 @@
           </el-form-item>
           
           <el-form-item label="描述" prop="description">
-            <el-input type="textarea" v-model="form.description" :rows="6" placeholder="10-2000字符商品的详细描述" />
+            <el-input type="textarea" v-model="form.description" :rows="6" placeholder="10-2000字符商品的详细描述" class="glass-input" />
           </el-form-item>
           
           <el-form-item label="图片">
@@ -29,10 +29,10 @@
           </el-form-item>
           
           <el-form-item>
-            <el-button type="primary" @click="submit" :loading="loading">发布</el-button>
+            <GlassButton variant="primary" @click="submit" :loading="loading">发布</GlassButton>
           </el-form-item>
         </el-form>
-      </el-card>
+      </GlassCard>
     </div>
   </div>
 </template>
@@ -44,6 +44,8 @@ import { useUserStore } from '@/stores/user'
 import { request } from '@/utils/request'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import GlassCard from '@/components/GlassCard.vue'
+import GlassButton from '@/components/GlassButton.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -82,7 +84,7 @@ const handleChange = (file, files) => {
   uploadedFiles.value = files
 }
 
-const handleSuccess = (response) => {
+const handleSuccess = () => {
   ElMessage.success('发布成功')
   router.push('/')
 }
@@ -133,6 +135,6 @@ onMounted(() => {
 h2 {
   text-align: center;
   color: #ff6b6b;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 </style>

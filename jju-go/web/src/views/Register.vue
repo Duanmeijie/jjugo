@@ -1,30 +1,32 @@
 <template>
   <div class="register page">
     <div class="container">
-      <el-card class="register-card">
+      <GlassCard class="register-card">
         <h2>注册</h2>
         <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
           <el-form-item label="学号" prop="student_id">
-            <el-input v-model="form.student_id" placeholder="11位数字学号" />
+            <el-input v-model="form.student_id" placeholder="11位数字学号" class="glass-input" />
           </el-form-item>
           <el-form-item label="手机号" prop="phone">
-            <el-input v-model="form.phone" placeholder="11位手机号" />
+            <el-input v-model="form.phone" placeholder="11位手机号" class="glass-input" />
           </el-form-item>
           <el-form-item label="密码" prop="password">
-            <el-input v-model="form.password" type="password" placeholder="3-15位密码" />
+            <el-input v-model="form.password" type="password" placeholder="3-15位密码" class="glass-input" />
           </el-form-item>
           <el-form-item label="昵称" prop="nickname">
-            <el-input v-model="form.nickname" placeholder="最多20位昵称" />
+            <el-input v-model="form.nickname" placeholder="最多20位昵称" class="glass-input" />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" style="width: 100%" @click="submit" :loading="loading">注册</el-button>
+            <GlassButton variant="primary" style="width: 100%" @click="submit" :loading="loading">
+              注册
+            </GlassButton>
           </el-form-item>
         </el-form>
         <div class="footer-link">
           <span>已有账号？</span>
           <RouterLink to="/login">去登录</RouterLink>
         </div>
-      </el-card>
+      </GlassCard>
     </div>
   </div>
 </template>
@@ -34,6 +36,8 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { request } from '@/utils/request'
 import { ElMessage } from 'element-plus'
+import GlassCard from '@/components/GlassCard.vue'
+import GlassButton from '@/components/GlassButton.vue'
 
 const router = useRouter()
 const formRef = ref()
@@ -105,21 +109,22 @@ const submit = async () => {
 
 .register-card {
   width: 400px;
-  padding: 20px;
+  padding: 30px;
   
   h2 {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
     color: #ff6b6b;
   }
 }
 
 .footer-link {
   text-align: center;
-  margin-top: 10px;
+  margin-top: 16px;
   a {
-    color: #ff6b6b;
+    color: #007AFF;
     margin-left: 5px;
+    font-weight: 500;
   }
 }
 </style>

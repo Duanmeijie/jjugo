@@ -1,7 +1,7 @@
 <template>
   <div class="home page">
     <div class="container">
-      <div class="search-bar">
+      <div class="search-bar glass-card">
         <el-input v-model="keyword" placeholder="搜索商品..." @keyup.enter="search" size="large">
           <template #append>
             <el-button :icon="Search" @click="search">搜索</el-button>
@@ -9,45 +9,51 @@
         </el-input>
       </div>
       
-      <div class="categories">
-        <el-button :type="categoryId === 0 ? 'primary' : ''" @click="selectCategory(0)">全部</el-button>
-        <el-button v-for="cat in categories" :key="cat.id" :type="categoryId === cat.id ? 'primary' : ''" @click="selectCategory(cat.id)">
+      <div class="categories glass-tabs">
+        <button 
+          v-for="cat in categories" 
+          :key="cat.id" 
+          :class="['glass-tab', { active: categoryId === cat.id }]"
+          @click="selectCategory(cat.id)"
+        >
           {{ cat.name }}
-        </el-button>
+        </button>
       </div>
 
       <div v-if="loading" class="loading-state">
-        <el-skeleton :rows="3" animated />
+        <div class="glass-loader"></div>
         <p>加载中...</p>
       </div>
 
-      <div v-else-if="error" class="error-state">
+      <div v-else-if="error" class="error-state glass-card">
         <p>{{ error }}</p>
-        <el-button type="primary" @click="fetchGoods(true)">刷新重试</el-button>
+        <GlassButton variant="primary" @click="fetchGoods(true)">刷新重试</GlassButton>
       </div>
 
-      <div v-else-if="goodsList.length === 0" class="empty-state">
+      <div v-else-if="goodsList.length === 0" class="empty-state glass-card">
         <p>暂无商品，去发布一个吧</p>
         <RouterLink to="/publish">
-          <el-button type="primary">发布商品</el-button>
+          <GlassButton variant="primary">发布商品</GlassButton>
         </RouterLink>
       </div>
 
       <el-row :gutter="20" class="goods-grid" v-else>
         <el-col :span="6" v-for="goods in goodsList" :key="goods.id">
-          <RouterLink :to="`/goods/${goods.id}`" class="goods-card">
-            <el-image :src="goods.pics[0]" fit="cover" class="goods-image" />
-            <div class="goods-info">
-              <div class="title">{{ goods.title }}</div>
-              <div class="price">¥{{ goods.price }}</div>
-              <div class="seller">{{ goods.seller?.nickname }}</div>
+          <GlassCard clickable @click="$router.push(`/goods/${goods.id}`)">
+            <div class="goods-card">
+              <el-image :src="goods.pics[0]" fit="cover" class="goods-image" />
+              <div class="goods-info">
+                <div class="title">{{ goods.title }}</div>
+                <div class="price">¥{{ goods.price }}</div>
+                <div class="seller">{{ goods.seller?.nickname }}</div>
+              </div>
             </div>
-          </RouterLink>
+          </GlassCard>
         </el-col>
       </el-row>
 
       <div class="load-more" v-if="hasMore">
-        <el-button @click="loadMoreGoods" :loading="loadingMore">加载更多</el-button>
+        <GlassButton @click="loadMoreGoods" :loading="loadingMore">加载更多</GlassButton>
       </div>
     </div>
   </div>
@@ -57,6 +63,8 @@
 import { ref, onMounted, computed } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { request } from '@/utils/request'
+import GlassCard from '@/components/GlassCard.vue'
+import GlassButton from '@/components/GlassButton.vue'
 
 const keyword = ref('')
 const categoryId = ref(0)
@@ -138,7 +146,7 @@ onMounted(() => {
   padding: 60px 20px;
   p {
     margin-bottom: 20px;
-    color: #666;
+    color: var(--text-secondary, #6C6C70);
   }
 }
 
@@ -150,7 +158,7 @@ onMounted(() => {
 }
 
 .error-state {
-  color: #f56c6c;
+  color: #FF3B30;
 }
 
 .goods-grid {
@@ -161,21 +169,15 @@ onMounted(() => {
 
 .goods-card {
   display: block;
-  background: #fff;
-  border-radius: 8px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: transform 0.2s, box-shadow 0.2s;
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  }
 }
 
 .goods-image {
   width: 100%;
   height: 200px;
   display: block;
+  border-radius: 12px 12px 0 0;
 }
 
 .goods-info {
@@ -199,7 +201,7 @@ onMounted(() => {
 
 .seller {
   font-size: 12px;
-  color: #999;
+  color: var(--text-tertiary, #98989D);
 }
 
 .load-more {
