@@ -47,14 +47,26 @@ function findBestAnswer(userMessage) {
     return bestMatch;
 }
 
-async function callOpenCodeAI(message, history = []) {
+async function callOpenCodeAI(message, history = [], userModel = null) {
     const apiKey = process.env.OPENCODE_API_KEY;
     if (!apiKey) {
         console.log('[ChatBot] No API key configured, using local mode');
         return { answer: null, modelName: '本地离线模式' };
     }
 
-    for (const modelInfo of FREE_MODELS) {
+    let modelsToTry = FREE_MODELS;
+    
+    if (userModel) {
+        console.log(`[ChatBot] User specified model: ${userModel}`);
+        const userModelInfo = FREE_MODELS.find(m => m.model === userModel);
+        if (userModelInfo) {
+            modelsToTry = [userModelInfo];
+        } else {
+            modelsToTry = [{ model: userModel, endpoint: 'https://opencode.ai/zen/v1/chat/completions', apiFormat: 'openai' }];
+        }
+    }
+
+    for (const modelInfo of modelsToTry) {
         try {
             console.log(`[ChatBot] Trying model: ${modelInfo.model} at ${modelInfo.endpoint}`);
 
@@ -148,7 +160,7 @@ const DEFAULT_ANSWER = '抱歉未能理解您的问题。您可以咨询：如�
 router.post('/ask', async (req, res) => {
     try {
         await loadQACache();
-        const { message, history } = req.body;
+        const { message, history, model } = req.body;
 
         if (!message || typeof message !== 'string') {
             return res.status(400).json({ code: 400, msg: '请输入问题内容' });
@@ -156,6 +168,7 @@ router.post('/ask', async (req, res) => {
 
         const trimmed = message.trim();
         const matchedQA = findBestAnswer(trimmed);
+        const userSelectedModel = model || null;
 
         if (matchedQA && matchedQA.priority >= 5) {
             return res.status(200).json({
@@ -170,7 +183,7 @@ router.post('/ask', async (req, res) => {
             });
         }
 
-        const aiResult = await callOpenCodeAI(trimmed, history || []);
+        const aiResult = await callOpenCodeAI(trimmed, history || [], userSelectedModel);
 
         if (aiResult.answer) {
             return res.status(200).json({

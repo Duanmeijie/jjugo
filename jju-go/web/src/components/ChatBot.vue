@@ -57,6 +57,14 @@
         </div>
 
         <div class="chatbot-input">
+          <el-select v-model="selectedModel" placeholder="选择模型" class="model-select" :disabled="loading">
+            <el-option label="自动推荐" value="" />
+            <el-option label="MiniMax M2.1 Free" value="minimax-m2.1-free" />
+            <el-option label="Kimi K2.5 Free" value="kimi-k2.5-free" />
+            <el-option label="Big Pickle" value="big-pickle" />
+            <el-option label="GLM-4.7 Flash" value="glm-4.7-flash" />
+            <el-option label="Qwen Turbo" value="qwen-turbo" />
+          </el-select>
           <el-input
             v-model="inputMessage"
             placeholder="输入问题，AI 智能客服为您解答..."
@@ -86,6 +94,7 @@ const messages = ref([])
 const hotQuestions = ref([])
 const loading = ref(false)
 const messagesRef = ref(null)
+const selectedModel = ref('')
 
 const toggleChat = () => {
   isOpen.value = !isOpen.value
@@ -153,7 +162,11 @@ const sendToBot = async (text) => {
       text: m.text,
       isUser: m.isUser
     }))
-    const res = await axios.post('/api/chatbot/ask', { message: text, history })
+    const res = await axios.post('/api/chatbot/ask', { 
+      message: text, 
+      history,
+      model: selectedModel.value || undefined
+    })
     if (res.data.code === 200) {
       const answer = res.data.data.answer
       const source = res.data.data.source || 'local'
@@ -351,6 +364,12 @@ onMounted(() => {
   border-top: 1px solid #eee;
   display: flex;
   gap: 8px;
+  align-items: center;
+
+  .model-select {
+    width: 130px;
+    flex-shrink: 0;
+  }
 
   .el-input {
     flex: 1;
