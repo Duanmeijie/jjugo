@@ -43,12 +43,7 @@
                 <el-icon :size="20"><Service /></el-icon>
               </div>
               <div class="message-content">
-                <div class="message-source" v-if="msg.source === 'ai'">
-                  <el-tag type="success" size="small">
-                    <el-icon :size="12"><Lightning /></el-icon>
-                    AI
-                  </el-tag>
-                </div>
+                <div class="model-name">{{ msg.modelName || '本地离线模式' }}</div>
                 <div class="message-bubble">
                   <span v-if="msg.typing">正在思考...</span>
                   <span v-else>{{ msg.text }}</span>
@@ -120,21 +115,22 @@ const sendQuickQuestion = (question) => {
 }
 
 const addUserMessage = (text) => {
-  messages.value.push({ text, isUser: true })
+  messages.value.push({ text, isUser: true, modelName: '' })
   scrollToBottom()
 }
 
-const addBotMessage = (text, typing = false, source = 'local') => {
-  messages.value.push({ text, isUser: false, typing, source })
+const addBotMessage = (text, typing = false, source = 'local', modelName = '本地离线模式') => {
+  messages.value.push({ text, isUser: false, typing, source, modelName })
   scrollToBottom()
 }
 
-const updateLastBotMessage = (text, source = 'local') => {
+const updateLastBotMessage = (text, source = 'local', modelName = '本地离线模式') => {
   const lastMsg = messages.value[messages.value.length - 1]
   if (lastMsg && !lastMsg.isUser) {
     lastMsg.text = text
     lastMsg.typing = false
     lastMsg.source = source
+    lastMsg.modelName = modelName
   }
   scrollToBottom()
 }
@@ -150,26 +146,31 @@ const sendMessage = () => {
 
 const sendToBot = async (text) => {
   loading.value = true
-  addBotMessage('', true, 'local')
+  addBotMessage('', true, 'local', '')
 
   try {
-    const res = await axios.post('/api/chatbot/ask', { message: text })
+    const history = messages.value.filter(m => !m.typing).slice(-6).map(m => ({
+      text: m.text,
+      isUser: m.isUser
+    }))
+    const res = await axios.post('/api/chatbot/ask', { message: text, history })
     if (res.data.code === 200) {
       const answer = res.data.data.answer
       const source = res.data.data.source || 'local'
-      await typeWriterEffect(answer, source)
+      const modelName = res.data.data.modelName || '本地离线模式'
+      await typeWriterEffect(answer, source, modelName)
     }
   } catch (err) {
-    updateLastBotMessage('抱歉，服务暂时不可用，请稍后再试。', 'local')
+    updateLastBotMessage('抱歉，服务暂时不可用，请稍后再试。', 'local', '本地离线模式')
   } finally {
     loading.value = false
   }
 }
 
-const typeWriterEffect = async (text, source = 'local') => {
+const typeWriterEffect = async (text, source = 'local', modelName = '本地离线模式') => {
   const lastMsg = messages.value[messages.value.length - 1]
   if (!lastMsg || lastMsg.isUser) {
-    addBotMessage('', true, source)
+    addBotMessage('', true, source, modelName)
   }
 
   let displayed = ''
