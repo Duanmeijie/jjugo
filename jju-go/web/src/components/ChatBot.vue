@@ -60,8 +60,14 @@
           </div>
         </div>
 
-        <div class="chatbot-input">
-          <el-select v-model="selectedModel" placeholder="选择模型" class="model-select glass-input" :disabled="loading">
+        <div class="chatbot-input" v-if="isOpen">
+          <el-select 
+            v-model="selectedModel" 
+            placeholder="选择模型" 
+            class="model-select" 
+            :disabled="loading"
+            popper-class="model-dropdown"
+          >
             <el-option label="自动推荐" value="" />
             <el-option label="MiniMax M2.5 Free" value="minimax-m2.5-free" />
             <el-option label="GLM-4 Flash" value="glm-4-flash" />
@@ -73,7 +79,7 @@
             placeholder="输入问题，AI 智能客服为您解答..."
             @keyup.enter="sendMessage"
             :disabled="loading"
-            class="glass-input"
+            class="message-input"
           />
           <GlassButton variant="primary" :icon="Position" @click="sendMessage" :loading="loading" />
         </div>
@@ -401,10 +407,14 @@ onMounted(() => {
   display: flex;
   gap: 10px;
   align-items: center;
+  position: relative;
+  z-index: 9998;
 
   .model-select {
-    width: 120px;
+    width: 110px;
     flex-shrink: 0;
+    position: relative;
+    z-index: 10000;
     
     :deep(.el-select__wrapper) {
       border-radius: 20px;
@@ -417,15 +427,9 @@ onMounted(() => {
         box-shadow: 0 0 0 2px rgba(228, 57, 60, 0.1);
       }
     }
-    
-    :deep(.el-select__dropdown) {
-      z-index: 10000 !important;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    }
   }
 
-  .el-input {
+  .message-input {
     flex: 1;
     
     :deep(.el-input__wrapper) {

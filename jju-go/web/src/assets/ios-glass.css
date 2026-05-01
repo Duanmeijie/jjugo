@@ -574,3 +574,14 @@ body {
 .glass-no-tap-highlight {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* AI助手下拉框层级修复 */
+.el-select__popper {
+  z-index: 10000 !important;
+}
+
+.el-select-dropdown {
+  z-index: 10000 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+}
