@@ -35,8 +35,19 @@
           <span class="user-nickname">{{ userStore.userInfo?.nickname }}</span>
           <transition name="fade">
             <div v-if="showUserMenu" class="dropdown-menu glass">
-              <div class="dropdown-item" @click.stop="$router.push('/profile')">个人中心</div>
-              <div class="dropdown-item" @click.stop="handleLogout">退出登录</div>
+              <div class="dropdown-item" @click.stop="$router.push('/cart')">
+                <el-icon><ShoppingCart /></el-icon> 购物车
+              </div>
+              <div class="dropdown-item" @click.stop="$router.push('/account')">
+                <el-icon><Setting /></el-icon> 账户设置
+              </div>
+              <div class="dropdown-item" @click.stop="$router.push('/profile')">
+                <el-icon><User /></el-icon> 个人中心
+              </div>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-item" @click.stop="handleLogout">
+                <el-icon><SwitchButton /></el-icon> 退出登录
+              </div>
             </div>
           </transition>
         </div>
@@ -49,6 +60,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { ShoppingCart, Setting, User, SwitchButton } from '@element-plus/icons-vue'
 import GlassButton from './GlassButton.vue'
 
 defineProps({
@@ -56,6 +68,7 @@ defineProps({
     type: Array,
     default: () => [
       { name: '首页', path: '/' },
+      { name: '购物车', path: '/cart' },
       { name: '发布', path: '/publish' },
       { name: '订单', path: '/orders' }
     ]
@@ -199,7 +212,7 @@ onUnmounted(() => {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  min-width: 140px;
+  min-width: 160px;
   padding: 6px;
   background: var(--glass-bg);
   backdrop-filter: blur(18px) saturate(180%);
@@ -210,6 +223,9 @@ onUnmounted(() => {
 }
 
 .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 14px;
   font-size: 14px;
   color: var(--text-primary, #000);
@@ -220,6 +236,16 @@ onUnmounted(() => {
   &:hover {
     background: rgba(0, 0, 0, 0.05);
   }
+  
+  .el-icon {
+    font-size: 16px;
+  }
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: #e0e0e0;
+  margin: 6px 0;
 }
 
 .fade-enter-active,

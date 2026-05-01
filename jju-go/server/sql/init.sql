@@ -29,7 +29,10 @@ CREATE TABLE goods (
     pics VARCHAR(500) COMMENT '图片路径JSON数组，如["/uploads/1.jpg"]',
     category_id INT,
     seller_id INT NOT NULL,
-    status ENUM('pending','approved','rejected','sold') DEFAULT 'pending',
+    seller_student_info JSON COMMENT '卖家学生信息 {"student_id":"", "college":"", "class":"", "phone":""}',
+    preferred_time_slots JSON COMMENT '期望交易时间数组，如["12:00-13:30","19:00-21:00"]',
+    preferred_location VARCHAR(200) COMMENT '期望交易地点',
+    status ENUM('pending','approved','selling','sold_pending','sold_out','rejected') DEFAULT 'pending',
     view_count INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_seller (seller_id),
@@ -43,13 +46,17 @@ CREATE TABLE orders (
     buyer_id INT NOT NULL,
     seller_id INT NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
-    status ENUM('pending_pay','pending_verify','completed','cancelled') DEFAULT 'pending_pay',
+    status ENUM('cart','pending_payment','pending_delivery','pending_review','after_sale','history','cancelled') DEFAULT 'cart',
     trade_code VARCHAR(6) COMMENT '6位数字交易码',
     trade_code_expire TIMESTAMP NULL COMMENT '交易码过期时间',
+    payment_deadline TIMESTAMP NULL COMMENT '付款截止时间(创建后24小时)',
+    delivery_deadline TIMESTAMP NULL COMMENT '交易截止时间(付款后72小时)',
+    review_deadline TIMESTAMP NULL COMMENT '评价截止时间(交易后7天)',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP NULL,
     INDEX idx_buyer (buyer_id),
-    INDEX idx_seller (seller_id)
+    INDEX idx_seller (seller_id),
+    INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE comments (
@@ -58,8 +65,11 @@ CREATE TABLE comments (
     user_id INT NOT NULL,
     content VARCHAR(500) NOT NULL,
     reply_to INT DEFAULT 0 COMMENT '回复哪条，0为顶层',
+    is_verified_buyer TINYINT(1) DEFAULT 0 COMMENT '是否为真实交易过的买家',
+    visibility ENUM('public','private') DEFAULT 'public' COMMENT '公开/私密',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_goods (goods_id)
+    INDEX idx_goods (goods_id),
+    INDEX idx_visibility (visibility)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE reviews (
