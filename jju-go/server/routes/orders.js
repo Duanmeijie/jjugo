@@ -27,10 +27,18 @@ const checkAndUpdateExpiredOrders = async (userId) => {
         'UPDATE orders SET status = ? WHERE id = ?',
         [STATUS_MAP.CART, order.id]
       );
-      await query(
-        'UPDATE goods SET status = ? WHERE id = (SELECT goods_id FROM orders WHERE id = ?)',
-        ['selling', order.id]
-      );
+      try {
+        await query(
+          'UPDATE goods SET status = ? WHERE id = (SELECT goods_id FROM orders WHERE id = ?)',
+          ['selling', order.id]
+        );
+      } catch (e) {
+        console.log('恢复商品状态失败，使用 approved', e.message);
+        await query(
+          'UPDATE goods SET status = ? WHERE id = (SELECT goods_id FROM orders WHERE id = ?)',
+          ['approved', order.id]
+        );
+      }
     }
   }
   
@@ -44,7 +52,12 @@ const checkAndUpdateExpiredOrders = async (userId) => {
       const [orderData] = await query('SELECT goods_id FROM orders WHERE id = ?', [order.id]);
       await query('UPDATE orders SET status = ? WHERE id = ?', [STATUS_MAP.CART, order.id]);
       if (orderData) {
-        await query('UPDATE goods SET status = ? WHERE id = ?', ['selling', orderData.goods_id]);
+        try {
+          await query('UPDATE goods SET status = ? WHERE id = ?', ['selling', orderData.goods_id]);
+        } catch (e) {
+          console.log('恢复商品状态失败，使用 approved', e.message);
+          await query('UPDATE goods SET status = ? WHERE id = ?', ['approved', orderData.goods_id]);
+        }
       }
     }
   }
@@ -81,7 +94,8 @@ router.post('/', verifyToken, async (req, res) => {
     }
 
     const g = goods[0];
-    if (g.status !== 'selling' && g.status !== 'approved') {
+    const validStatuses = ['selling', 'approved', 'pending'];
+    if (!validStatuses.includes(g.status)) {
       return res.status(400).json({ code: 400, msg: '商品已下架或已售出' });
     }
 
@@ -105,7 +119,12 @@ router.post('/', verifyToken, async (req, res) => {
       [goodsId, buyerId, g.seller_id, g.price, STATUS_MAP.PENDING_PAYMENT, paymentDeadline]
     );
 
-    await query('UPDATE goods SET status = ? WHERE id = ?', ['sold_pending', goodsId]);
+    try {
+      await query('UPDATE goods SET status = ? WHERE id = ?', ['sold_pending', goodsId]);
+    } catch (updateErr) {
+      console.log('更新状态为 sold_pending 失败，尝试更新为 sold', updateErr.message);
+      await query('UPDATE goods SET status = ? WHERE id = ?', ['sold', goodsId]);
+    }
 
     res.status(200).json({
       code: 200,
@@ -143,7 +162,12 @@ router.post('/:id/pay', verifyToken, async (req, res) => {
 
     if (ord.payment_deadline && new Date(ord.payment_deadline) < new Date()) {
       await query('UPDATE orders SET status = ? WHERE id = ?', [STATUS_MAP.CART, orderId]);
-      await query('UPDATE goods SET status = ? WHERE id = (SELECT goods_id FROM orders WHERE id = ?)', ['selling', orderId]);
+      try {
+        await query('UPDATE goods SET status = ? WHERE id = (SELECT goods_id FROM orders WHERE id = ?)', ['selling', orderId]);
+      } catch (e) {
+        console.log('恢复商品状态失败，使用 approved', e.message);
+        await query('UPDATE goods SET status = ? WHERE id = (SELECT goods_id FROM orders WHERE id = ?)', ['approved', orderId]);
+      }
       return res.status(400).json({ code: 400, msg: '付款已超时，订单已移入购物车' });
     }
 
@@ -226,7 +250,12 @@ router.post('/:id/verify', verifyToken, async (req, res) => {
       'UPDATE orders SET status = ?, completed_at = ?, review_deadline = ? WHERE id = ?',
       [STATUS_MAP.PENDING_REVIEW, now, reviewDeadline, orderId]
     );
-    await query('UPDATE goods SET status = ? WHERE id = ?', ['sold_out', ord.goods_id]);
+    try {
+      await query('UPDATE goods SET status = ? WHERE id = ?', ['sold_out', ord.goods_id]);
+    } catch (e) {
+      console.log('更新状态为 sold_out 失败，使用 sold', e.message);
+      await query('UPDATE goods SET status = ? WHERE id = ?', ['sold', ord.goods_id]);
+    }
 
     res.status(200).json({
       code: 200,
@@ -275,7 +304,12 @@ router.post('/:id/complete', verifyToken, async (req, res) => {
       'UPDATE orders SET status = ?, completed_at = ?, review_deadline = ? WHERE id = ?',
       [STATUS_MAP.PENDING_REVIEW, now, reviewDeadline, orderId]
     );
-    await query('UPDATE goods SET status = ? WHERE id = ?', ['sold_out', ord.goods_id]);
+    try {
+      await query('UPDATE goods SET status = ? WHERE id = ?', ['sold_out', ord.goods_id]);
+    } catch (e) {
+      console.log('更新状态为 sold_out 失败，使用 sold', e.message);
+      await query('UPDATE goods SET status = ? WHERE id = ?', ['sold', ord.goods_id]);
+    }
 
     res.status(200).json({
       code: 200,
@@ -283,7 +317,8 @@ router.post('/:id/complete', verifyToken, async (req, res) => {
       data: { status: STATUS_MAP.PENDING_REVIEW }
     });
   } catch (err) {
-    console.status(500).json({ code: 500, msg: '服务器错误' });
+    console.error(err);
+    res.status(500).json({ code: 500, msg: '服务器错误' });
   }
 });
 
@@ -351,7 +386,12 @@ router.post('/:id/cancel', verifyToken, async (req, res) => {
     }
 
     await query('UPDATE orders SET status = ? WHERE id = ?', [STATUS_MAP.CART, orderId]);
-    await query('UPDATE goods SET status = ? WHERE id = ?', ['selling', ord.goods_id]);
+    try {
+      await query('UPDATE goods SET status = ? WHERE id = ?', ['selling', ord.goods_id]);
+    } catch (e) {
+      console.log('恢复商品状态失败，使用 approved', e.message);
+      await query('UPDATE goods SET status = ? WHERE id = ?', ['approved', ord.goods_id]);
+    }
 
     res.status(200).json({ code: 200, msg: '订单已取消' });
   } catch (err) {

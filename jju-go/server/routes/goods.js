@@ -11,7 +11,12 @@ const GOODS_STATUS = {
   SELLING: 'selling',
   SOLD_PENDING: 'sold_pending',
   SOLD_OUT: 'sold_out',
-  REJECTED: 'rejected'
+  REJECTED: 'rejected',
+  SOLD: 'sold'
+};
+
+const isValidStatus = (status) => {
+  return ['pending', 'approved', 'selling', 'sold_pending', 'sold_out', 'rejected', 'sold'].includes(status);
 };
 
 router.post('/', verifyToken, upload.array('images', 5), async (req, res) => {
@@ -70,14 +75,34 @@ router.post('/', verifyToken, upload.array('images', 5), async (req, res) => {
     let timeSlotsJson = '[]';
     if (preferred_time_slots) {
       try {
-        timeSlotsJson = typeof preferred_time_slots === 'string' ? preferred_time_slots : JSON.stringify(preferred_time_slots);
-      } catch (e) {}
+        const ts = typeof preferred_time_slots === 'string' ? preferred_time_slots : JSON.stringify(preferred_time_slots);
+        JSON.parse(ts);
+        timeSlotsJson = ts;
+      } catch (e) {
+        console.log('[DEBUG] preferred_time_slots parse failed:', e.message, 'value:', preferred_time_slots);
+        timeSlotsJson = '[]';
+      }
     }
+    console.log('[DEBUG] final timeSlotsJson:', timeSlotsJson);
 
-    const result = await query(
-      'INSERT INTO goods (title, description, price, pics, category_id, seller_id, seller_student_info, preferred_time_slots, preferred_location, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [title, description, priceNum, picsJson, categoryIdNum, req.user.id, sellerStudentInfo, timeSlotsJson, preferred_location || '', GOODS_STATUS.SELLING]
-    );
+    const insertStatus = GOODS_STATUS.SELLING;
+    
+    try {
+      var result = await query(
+        'INSERT INTO goods (title, description, price, pics, category_id, seller_id, seller_student_info, preferred_time_slots, preferred_location, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [title, description, priceNum, picsJson, categoryIdNum, req.user.id, sellerStudentInfo, timeSlotsJson, preferred_location || '', insertStatus]
+      );
+    } catch (insertErr) {
+      if (insertErr.code === 'ER_TRUNCATED_WRONG_VALUE' || insertErr.message.includes('enum')) {
+        console.log('状态枚举不兼容，使用 approved 状态');
+        result = await query(
+          'INSERT INTO goods (title, description, price, pics, category_id, seller_id, seller_student_info, preferred_time_slots, preferred_location, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [title, description, priceNum, picsJson, categoryIdNum, req.user.id, sellerStudentInfo, timeSlotsJson, preferred_location || '', GOODS_STATUS.APPROVED]
+        );
+      } else {
+        throw insertErr;
+      }
+    }
 
     res.status(200).json({
       code: 200,
@@ -101,8 +126,8 @@ router.get('/', async (req, res) => {
       sql += ' AND g.status = ?';
       params.push(status);
     } else {
-      sql += ' AND g.status IN (?, ?)';
-      params.push(GOODS_STATUS.APPROVED, GOODS_STATUS.SELLING);
+      sql += ' AND g.status IN (?, ?, ?)';
+      params.push(GOODS_STATUS.APPROVED, GOODS_STATUS.SELLING, 'approved');
     }
 
     if (keyword) {
@@ -160,25 +185,31 @@ router.get('/', async (req, res) => {
     const countResult = await query(countSql, countParams);
     const total = countResult[0].total;
 
-    const list = goods.map(g => ({
-      id: g.id,
-      title: g.title,
-      price: g.price,
-      pics: JSON.parse(g.pics || '[]'),
-      category_id: g.category_id,
-      view_count: g.view_count,
-      created_at: g.created_at,
-      status: g.status,
-      seller_student_info: JSON.parse(g.seller_student_info || '{}'),
-      preferred_time_slots: JSON.parse(g.preferred_time_slots || '[]'),
-      preferred_location: g.preferred_location,
-      seller: { nickname: g.seller_nickname, avatar: g.seller_avatar }
-    }));
+    const list = goods.map(g => {
+      let pics = [], sellerInfo = {}, timeSlots = [];
+      try { pics = typeof g.pics === 'string' ? JSON.parse(g.pics || '[]') : (g.pics || []); } catch(e) {}
+      try { sellerInfo = typeof g.seller_student_info === 'string' ? JSON.parse(g.seller_student_info || '{}') : (g.seller_student_info || {}); } catch(e) {}
+      try { timeSlots = typeof g.preferred_time_slots === 'string' ? JSON.parse(g.preferred_time_slots || '[]') : (g.preferred_time_slots || []); } catch(e) {}
+      return {
+        id: g.id,
+        title: g.title,
+        price: g.price,
+        pics,
+        category_id: g.category_id,
+        view_count: g.view_count,
+        created_at: g.created_at,
+        status: g.status,
+        seller_student_info: sellerInfo,
+        preferred_time_slots: timeSlots,
+        preferred_location: g.preferred_location,
+        seller: { nickname: g.seller_nickname, avatar: g.seller_avatar }
+      };
+    });
 
     res.status(200).json({ code: 200, data: { list, total, page: pageNum, limit: limitNum } });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ code: 500, msg: '服务器错误' });
+    console.error('[GET /goods] Error:', err.message, err.stack);
+    res.status(500).json({ code: 500, msg: '服务器错误: ' + err.message });
   }
 });
 
