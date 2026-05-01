@@ -5,7 +5,7 @@
         <p>{{ error }}</p>
         <el-button type="primary" @click="fetchGoods">刷新重试</el-button>
       </div>
-      <div class="goods-container" v-else-if="goods">
+      <div class="goods-container glass-card" v-else-if="goods">
         <div class="goods-images">
           <el-carousel height="400px" v-if="goods.pics?.length">
             <el-carousel-item v-for="(pic, index) in goods.pics" :key="index">
@@ -20,7 +20,7 @@
           
           <div class="seller-info">
             <el-avatar :size="40" :src="goods.seller?.avatar" />
-            <span>{{ goods.seller?.nickname }}</span>
+            <span class="seller-name">{{ goods.seller?.nickname }}</span>
           </div>
           
           <div class="description">{{ goods.description }}</div>
@@ -29,28 +29,31 @@
             <el-button :type="isFavorited ? 'danger' : ''" :icon="Star" @click="toggleFavorite">
               {{ isFavorited ? '已收藏' : '收藏' }}
             </el-button>
-            <el-button type="primary" size="large" @click="buyNow" :disabled="!userStore.isLoggedIn">
+            <GlassButton variant="primary" size="large" @click="buyNow" :disabled="!userStore.isLoggedIn">
               立即购买
-            </el-button>
+            </GlassButton>
           </div>
         </div>
       </div>
       
-      <div class="comments-section">
+      <div class="comments-section glass-card">
         <h3>留言</h3>
         <div class="comment-list">
           <div v-for="comment in comments" :key="comment.id" class="comment-item">
             <el-avatar :size="32" :src="comment.user?.avatar" />
             <div class="comment-content">
-              <div class="comment-user">{{ comment.user?.nickname }}</div>
-              <div>{{ comment.content }}</div>
+              <div class="comment-header">
+                <span class="comment-user">{{ comment.user?.nickname }}</span>
+                <span class="comment-time">{{ formatTime(comment.created_at) }}</span>
+              </div>
+              <div class="comment-text">{{ comment.content }}</div>
             </div>
           </div>
         </div>
         
         <div class="comment-form" v-if="userStore.isLoggedIn">
-          <el-input v-model="commentContent" placeholder="写下你的留言..." />
-          <el-button type="primary" @click="submitComment" :loading="commentLoading">留言</el-button>
+          <el-input v-model="commentContent" placeholder="写下你的留言..." class="glass-input" />
+          <GlassButton variant="primary" @click="submitComment" :loading="commentLoading">留言</GlassButton>
         </div>
       </div>
     </div>
@@ -64,6 +67,7 @@ import { useUserStore } from '@/stores/user'
 import { request } from '@/utils/request'
 import { Star } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import GlassButton from '@/components/GlassButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -76,6 +80,22 @@ const isFavorited = ref(false)
 const comments = ref([])
 const commentContent = ref('')
 const commentLoading = ref(false)
+
+const formatTime = (time) => {
+  if (!time) return ''
+  const date = new Date(time)
+  const now = new Date()
+  const diff = now - date
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+  
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return `${minutes}分钟前`
+  if (hours < 24) return `${hours}小时前`
+  if (days < 7) return `${days}天前`
+  return `${date.getMonth() + 1}-${date.getDate()}`
+}
 
 const fetchGoods = async () => {
   loading.value = true
@@ -137,14 +157,18 @@ onMounted(() => fetchGoods())
 .goods-container {
   display: flex;
   gap: 40px;
+  padding: 24px;
   background: #fff;
-  padding: 20px;
-  border-radius: 8px;
+  border-radius: 16px;
 }
 
 .goods-images {
   width: 400px;
   flex-shrink: 0;
+  
+  :deep(.el-carousel__item) {
+    border-radius: 12px;
+  }
 }
 
 .goods-info {
@@ -152,70 +176,118 @@ onMounted(() => fetchGoods())
 }
 
 .title {
-  font-size: 24px;
+  font-size: 26px;
+  font-weight: 700;
+  color: #111111;
   margin-bottom: 20px;
+  line-height: 1.4;
 }
 
 .price {
-  font-size: 32px;
-  color: #ff6b6b;
-  font-weight: bold;
-  margin-bottom: 20px;
+  font-size: 36px;
+  color: #E4393C;
+  font-weight: 700;
+  margin-bottom: 24px;
 }
 
 .seller-info {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 24px;
+  
+  .seller-name {
+    font-size: 16px;
+    font-weight: 500;
+    color: #666666;
+  }
 }
 
 .description {
+  font-size: 15px;
   line-height: 1.8;
+  color: #444444;
   margin-bottom: 30px;
 }
 
 .actions {
   display: flex;
-  gap: 10px;
+  gap: 16px;
 }
 
 .comments-section {
-  margin-top: 20px;
+  margin-top: 24px;
+  padding: 24px;
   background: #fff;
-  padding: 20px;
-  border-radius: 8px;
+  border-radius: 16px;
   
   h3 {
-    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333333;
+    margin-bottom: 20px;
   }
 }
 
 .comment-item {
   display: flex;
-  gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid #eee;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .comment-content {
   flex: 1;
 }
 
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
 .comment-user {
-  font-weight: bold;
-  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333333;
+}
+
+.comment-time {
+  font-size: 12px;
+  color: #999999;
+}
+
+.comment-text {
+  font-size: 14px;
+  color: #555555;
+  line-height: 1.6;
 }
 
 .comment-form {
   display: flex;
-  gap: 10px;
-  margin-top: 15px;
+  gap: 12px;
+  margin-top: 20px;
+  
+  .glass-input {
+    flex: 1;
+  }
 }
 
 .error-state {
   text-align: center;
   padding: 60px 20px;
-  color: #f56c6c;
+  color: #FF3B30;
+}
+
+@media (max-width: 768px) {
+  .goods-container {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .goods-images {
+    width: 100%;
+  }
 }
 </style>
