@@ -9,6 +9,7 @@ const routes = [
   { path: '/publish', name: 'Publish', component: () => import('@/views/Publish.vue'), meta: { requiresAuth: true } },
   { path: '/profile', name: 'Profile', component: () => import('@/views/Profile.vue'), meta: { requiresAuth: true } },
   { path: '/orders', name: 'Orders', component: () => import('@/views/Orders.vue'), meta: { requiresAuth: true } },
+  { path: '/verify', name: 'Verify', component: () => import('@/views/Verify.vue'), meta: { requiresAuth: true } },
   { path: '/pay/:orderId', name: 'Pay', component: () => import('@/views/Pay.vue'), meta: { requiresAuth: true } },
   { path: '/admin', redirect: '/admin/dashboard' },
   { path: '/admin/dashboard', name: 'Dashboard', component: () => import('@/views/admin/Dashboard.vue'), meta: { requiresAdmin: true } },
