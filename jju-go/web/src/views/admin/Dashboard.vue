@@ -53,10 +53,10 @@
             ¥{{ row.amount }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="status" label="状态" width="120">
           <template #default="{ row }">
-            <el-tag :type="row.status === 'completed' ? 'success' : row.status === 'pending_verify' ? 'warning' : ''">
-              {{ row.status === 'completed' ? '已完成' : row.status === 'pending_verify' ? '待核验' : '待支付' }}
+            <el-tag :type="getStatusType(row.status)">
+              {{ getStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -79,6 +79,19 @@ import { User, Goods, Document, Calendar } from '@element-plus/icons-vue'
 const stats = ref({ total_users: 0, total_goods: 0, total_orders: 0, today_orders: 0 })
 const recentOrders = ref([])
 const loading = ref(false)
+
+const statusMap = {
+  cart: { text: '购物车', type: 'info' },
+  pending_payment: { text: '待付款', type: 'warning' },
+  pending_delivery: { text: '待收货', type: '' },
+  pending_review: { text: '待评价', type: 'success' },
+  after_sale: { text: '售后中', type: 'info' },
+  history: { text: '已完成', type: 'success' },
+  cancelled: { text: '已取消', type: 'info' }
+}
+
+const getStatusType = (status) => statusMap[status]?.type || ''
+const getStatusText = (status) => statusMap[status]?.text || status
 
 const fetchStats = async () => {
   try {

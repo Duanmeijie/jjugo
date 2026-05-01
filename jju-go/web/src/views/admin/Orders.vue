@@ -3,9 +3,12 @@
     <el-card v-loading="loading">
       <div class="filter-bar">
         <el-select v-model="statusFilter" placeholder="筛选状态" clearable @change="fetchOrders">
-          <el-option label="待支付" value="pending_pay" />
-          <el-option label="待核验" value="pending_verify" />
-          <el-option label="已完成" value="completed" />
+          <el-option label="购物车" value="cart" />
+          <el-option label="待付款" value="pending_payment" />
+          <el-option label="待收货" value="pending_delivery" />
+          <el-option label="待评价" value="pending_review" />
+          <el-option label="售后中" value="after_sale" />
+          <el-option label="已完成" value="history" />
           <el-option label="已取消" value="cancelled" />
         </el-select>
       </div>
@@ -20,10 +23,10 @@
             ¥{{ row.amount }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="status" label="状态" width="120">
           <template #default="{ row }">
-            <el-tag :type="row.status === 'completed' ? 'success' : row.status === 'pending_verify' ? 'warning' : row.status === 'cancelled' ? 'info' : ''">
-              {{ row.status === 'completed' ? '已完成' : row.status === 'pending_verify' ? '待核验' : row.status === 'cancelled' ? '已取消' : '待支付' }}
+            <el-tag :type="getStatusType(row.status)">
+              {{ getStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -56,6 +59,24 @@ const page = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 const statusFilter = ref('')
+
+const statusMap = {
+  cart: { text: '购物车', type: 'info' },
+  pending_payment: { text: '待付款', type: 'warning' },
+  pending_delivery: { text: '待收货', type: '' },
+  pending_review: { text: '待评价', type: 'success' },
+  after_sale: { text: '售后中', type: 'info' },
+  history: { text: '已完成', type: 'success' },
+  cancelled: { text: '已取消', type: 'info' }
+}
+
+const getStatusType = (status) => {
+  return statusMap[status]?.type || ''
+}
+
+const getStatusText = (status) => {
+  return statusMap[status]?.text || status
+}
 
 const fetchOrders = async () => {
   loading.value = true

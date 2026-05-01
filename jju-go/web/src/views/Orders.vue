@@ -379,9 +379,12 @@ onUnmounted(() => {
   white-space: nowrap;
   transition: all 0.2s;
   font-size: 14px;
+  background: #f5f5f5;
+  color: #666;
   
   &:hover {
-    background: #f5f5f5;
+    background: #e8e8e8;
+    color: #333;
   }
   
   &.active {
