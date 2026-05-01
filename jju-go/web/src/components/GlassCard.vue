@@ -26,13 +26,13 @@ const handleClick = (e) => {
 .glass-card {
   position: relative;
   background: var(--glass-bg);
-  backdrop-filter: blur(18px) saturate(180%);
-  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--glass-border);
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
   padding: 20px;
-  transition: transform 200ms ease, box-shadow 200ms ease;
+  transition: transform 300ms ease, box-shadow 300ms ease, border-color 300ms ease;
   will-change: transform, box-shadow;
   overflow: hidden;
 
@@ -41,11 +41,12 @@ const handleClick = (e) => {
 
     &:hover {
       transform: translateY(-4px);
-      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      border-color: rgba(102, 126, 234, 0.3);
     }
 
     &:active {
-      transform: translateY(-2px) scale(0.99);
+      transform: translateY(-2px) scale(0.98);
     }
   }
 }
@@ -57,7 +58,7 @@ const handleClick = (e) => {
   padding: 1px;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0.25),
     rgba(255, 255, 255, 0)
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -70,27 +71,27 @@ const handleClick = (e) => {
 
 @keyframes border-glow {
   0%, 100% {
-    opacity: 0.5;
+    opacity: 0.4;
   }
   50% {
-    opacity: 1;
+    opacity: 0.8;
   }
 }
 
 :global(:root), :global([data-theme="dark"]) {
-  --glass-bg: rgba(30, 30, 30, 0.65);
-  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass-bg: rgba(30, 34, 45, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.1);
 }
 
 :root {
-  --glass-bg: rgba(255, 255, 255, 0.12);
-  --glass-border: rgba(255, 255, 255, 0.25);
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.3);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --glass-bg: rgba(30, 30, 30, 0.65);
-    --glass-border: rgba(255, 255, 255, 0.15);
+    --glass-bg: rgba(30, 34, 45, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.1);
   }
 }
 </style>

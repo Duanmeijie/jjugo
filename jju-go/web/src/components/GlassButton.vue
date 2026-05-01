@@ -48,19 +48,19 @@ const handleClick = (e) => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 24px;
-  font-size: 16px;
+  padding: 14px 28px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
   background: var(--glass-bg);
-  backdrop-filter: blur(18px) saturate(180%);
-  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--glass-border);
   border-radius: 14px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   overflow: hidden;
-  transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+  transition: transform 250ms ease, box-shadow 250ms ease, opacity 250ms ease, background 250ms ease;
   will-change: transform, box-shadow;
   user-select: none;
 
@@ -74,15 +74,15 @@ const handleClick = (e) => {
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(255, 255, 255, 0.3),
+      rgba(255, 255, 255, 0.25),
       transparent
     );
-    transition: left 0.5s ease;
+    transition: left 0.6s ease;
   }
 
   &:hover {
-    transform: scale(1.02);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    transform: scale(1.02) translateY(-2px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
 
     &::before {
       left: 100%;
@@ -90,44 +90,83 @@ const handleClick = (e) => {
   }
 
   &:active {
-    transform: scale(0.98);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    transform: scale(0.97) translateY(0);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   }
 
   &:disabled {
     opacity: 0.5;
     pointer-events: none;
     transform: none;
+    box-shadow: none;
   }
 
   &.primary {
-    background: #007AFF;
-    border-color: #007AFF;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: transparent;
     color: white;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.35);
+
+    &:hover {
+      box-shadow: 0 16px 36px rgba(102, 126, 234, 0.45);
+    }
+
+    &:active {
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+    }
   }
 
   &.success {
-    background: #34C759;
-    border-color: #34C759;
+    background: linear-gradient(135deg, #34C759 0%, #30B350 100%);
+    border-color: transparent;
     color: white;
+    box-shadow: 0 8px 24px rgba(52, 199, 89, 0.35);
+
+    &:hover {
+      box-shadow: 0 16px 36px rgba(52, 199, 89, 0.45);
+    }
   }
 
   &.danger {
-    background: #FF3B30;
-    border-color: #FF3B30;
+    background: linear-gradient(135deg, #FF3B30 0%, #E02D24 100%);
+    border-color: transparent;
     color: white;
+    box-shadow: 0 8px 24px rgba(255, 59, 48, 0.35);
+
+    &:hover {
+      box-shadow: 0 16px 36px rgba(255, 59, 48, 0.45);
+    }
   }
 
   &.warning {
-    background: #FF9500;
-    border-color: #FF9500;
+    background: linear-gradient(135deg, #FF9500 0%, #E08600 100%);
+    border-color: transparent;
     color: white;
+    box-shadow: 0 8px 24px rgba(255, 149, 0, 0.35);
+
+    &:hover {
+      box-shadow: 0 16px 36px rgba(255, 149, 0, 0.45);
+    }
   }
 }
 
 .btn-loader {
   width: 18px;
   height: 18px;
+}
+
+.btn-loader::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .btn-content {

@@ -146,7 +146,7 @@ onMounted(() => {
   padding: 60px 20px;
   p {
     margin-bottom: 20px;
-    color: var(--text-secondary, #6C6C70);
+    color: var(--text-secondary, #4a4a6a);
   }
 }
 
@@ -171,6 +171,12 @@ onMounted(() => {
   display: block;
   border-radius: 16px;
   overflow: hidden;
+  transition: transform 300ms ease, box-shadow 300ms ease;
+
+  &:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+  }
 }
 
 .goods-image {
@@ -181,11 +187,13 @@ onMounted(() => {
 }
 
 .goods-info {
-  padding: 12px;
+  padding: 14px;
 }
 
 .title {
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a2e);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -193,15 +201,15 @@ onMounted(() => {
 }
 
 .price {
-  color: #ff6b6b;
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 4px;
+  color: #F43F5E;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 6px;
 }
 
 .seller {
-  font-size: 12px;
-  color: var(--text-tertiary, #98989D);
+  font-size: 13px;
+  color: var(--text-secondary, #64748B);
 }
 
 .load-more {
