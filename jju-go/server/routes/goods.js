@@ -322,6 +322,11 @@ router.get('/:id', async (req, res) => {
       user: { id: c.user_id, nickname: c.nickname, avatar: c.avatar }
     }));
 
+    let pics = [], sellerInfo = {}, timeSlots = [];
+    try { pics = typeof g.pics === 'string' ? JSON.parse(g.pics || '[]') : (g.pics || []); } catch(e) {}
+    try { sellerInfo = typeof g.seller_student_info === 'string' ? JSON.parse(g.seller_student_info || '{}') : (g.seller_student_info || {}); } catch(e) {}
+    try { timeSlots = typeof g.preferred_time_slots === 'string' ? JSON.parse(g.preferred_time_slots || '[]') : (g.preferred_time_slots || []); } catch(e) {}
+
     res.status(200).json({
       code: 200,
       data: {
@@ -329,7 +334,7 @@ router.get('/:id', async (req, res) => {
         title: g.title,
         description: g.description,
         price: g.price,
-        pics: JSON.parse(g.pics || '[]'),
+        pics,
         category_id: g.category_id,
         view_count: g.view_count + 1,
         created_at: g.created_at,
@@ -338,10 +343,10 @@ router.get('/:id', async (req, res) => {
           id: g.seller_id, 
           nickname: g.seller_nickname, 
           avatar: g.seller_avatar,
-          student_info: JSON.parse(g.seller_student_info || '{}')
+          student_info: sellerInfo
         },
-        seller_student_info: JSON.parse(g.seller_student_info || '{}'),
-        preferred_time_slots: JSON.parse(g.preferred_time_slots || '[]'),
+        seller_student_info: sellerInfo,
+        preferred_time_slots: timeSlots,
         preferred_location: g.preferred_location,
         comments: commentsData,
         is_favorited: isFavorited
