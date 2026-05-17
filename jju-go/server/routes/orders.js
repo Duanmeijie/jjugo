@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../config/db');
 const { verifyToken } = require('../middleware/auth');
+const { createNotification, TYPES } = require('./notifications');
 
 const STATUS_MAP = {
   CART: 'cart',
@@ -125,6 +126,14 @@ router.post('/', verifyToken, async (req, res) => {
       console.log('更新状态为 sold_pending 失败，尝试更新为 sold', updateErr.message);
       await query('UPDATE goods SET status = ? WHERE id = ?', ['sold', goodsId]);
     }
+
+    await createNotification(
+        g.seller_id,
+        TYPES.ORDER_CREATED,
+        '新订单通知',
+        `您的商品有新的订单，请及时处理`,
+        result.insertId
+    );
 
     res.status(200).json({
       code: 200,
@@ -256,6 +265,14 @@ router.post('/:id/verify', verifyToken, async (req, res) => {
       console.log('更新状态为 sold_out 失败，使用 sold', e.message);
       await query('UPDATE goods SET status = ? WHERE id = ?', ['sold', ord.goods_id]);
     }
+
+    await createNotification(
+        ord.buyer_id,
+        TYPES.ORDER_COMPLETED,
+        '交易完成通知',
+        `您的订单已完成，请对卖家进行评价`,
+        orderId
+    );
 
     res.status(200).json({
       code: 200,

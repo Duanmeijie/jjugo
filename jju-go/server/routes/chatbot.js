@@ -4,7 +4,13 @@ const { query } = require('../config/db');
 const axios = require('axios');
 
 const AI_SYSTEM_PROMPT = '你是九院易购校园二手交易平台的智能客服。请用简洁中文回答，50字以内。如果用户问非平台问题，礼貌引导回平台业务。';
-const AI_TIMEOUT = 8000;
+const AI_TIMEOUT = 10000;
+
+const AVAILABLE_MODELS = [
+    { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', provider: 'DeepSeek', default: true },
+    { id: 'deepseek-chat', name: 'DeepSeek Chat', provider: 'DeepSeek', default: false },
+    { id: 'minimax-m2.5-free', name: 'MiniMax M2.5', provider: 'OpenCode', default: false }
+];
 
 let qaCache = [];
 let cacheLoaded = false;
@@ -21,7 +27,7 @@ async function loadQACache() {
     }
 }
 
-function matchKeywords(userMessage) {
+function matchKeyword(userMessage) {
     const input = userMessage.toLowerCase().trim();
     if (!input) return null;
     
@@ -58,7 +64,7 @@ function localFallback(userMessage) {
         return '您好！请问想问什么？';
     }
     
-    const matched = matchKeywords(userMessage);
+    const matched = matchKeyword(userMessage);
     if (matched) {
         return matched;
     }
@@ -74,28 +80,33 @@ function localFallback(userMessage) {
     return '抱歉未能理解您的问题。您可以咨询：如何发布商品、交易码怎么用、忘记密码怎么办等。';
 }
 
-async function callAIApi(message, model, history) {
-    const apiKey = process.env.OPENCODE_API_KEY;
-    const apiUrl = process.env.OPENCODE_API_URL || 'https://opencode.ai/zen/v1/chat/completions';
+async function callDeepSeekApi(message, model, history) {
+    const apiKey = process.env.DEEPSEEK_API_KEY;
+    const apiUrl = process.env.DEEPSEEK_API_URL || 'https://api.deepseek.com/v1/chat/completions';
     
     if (!apiKey) {
-        console.log('[ChatBot] No API key');
-        return { success: false, error: 'API密钥未配置' };
+        console.log('[ChatBot] DeepSeek API key not configured');
+        return { success: false, error: 'DeepSeek API密钥未配置' };
     }
     
     const messages = [
         { role: 'system', content: AI_SYSTEM_PROMPT },
-        ...history.slice(-3).map(h => ({ role: h.isUser ? 'user' : 'assistant', content: h.text })),
+        ...history.slice(-5).map(h => ({ role: h.isUser ? 'user' : 'assistant', content: h.text })),
         { role: 'user', content: message }
     ];
     
     try {
         const response = await axios.post(
             apiUrl,
-            { model: model, messages: messages, max_tokens: 300 },
+            { 
+                model: model || 'deepseek-v4-flash', 
+                messages: messages, 
+                max_tokens: 500,
+                temperature: 0.7
+            },
             {
                 headers: {
-                    'Authorization': 'Bearer ' + apiKey,
+                    'Authorization': `Bearer ${apiKey}`,
                     'Content-Type': 'application/json'
                 },
                 timeout: AI_TIMEOUT
@@ -104,13 +115,64 @@ async function callAIApi(message, model, history) {
         
         const answer = response.data?.choices?.[0]?.message?.content;
         if (answer) {
-            return { success: true, answer: answer, modelName: model };
+            return { success: true, answer: answer, modelName: model || 'deepseek-v4-flash' };
         }
         return { success: false, error: 'AI返回为空' };
     } catch (err) {
         const status = err.response?.status;
         const data = err.response?.data;
-        console.error('[ChatBot] API Error:', status, JSON.stringify(data || err.message));
+        console.error('[ChatBot] DeepSeek API Error:', status, JSON.stringify(data || err.message));
+        
+        if (status === 401) {
+            return { success: false, error: 'API密钥无效，请检查配置' };
+        }
+        if (status === 429) {
+            return { success: false, error: '请求过于频繁，请稍后重试' };
+        }
+        if (status >= 500) {
+            return { success: false, error: 'AI服务暂时不可用，请稍后重试' };
+        }
+        return { success: false, error: '网络错误: ' + (err.message || '未知错误') };
+    }
+}
+
+async function callOpenCodeApi(message, model, history) {
+    const apiKey = process.env.OPENCODE_API_KEY;
+    const apiUrl = process.env.OPENCODE_API_URL || 'https://opencode.ai/zen/v1/chat/completions';
+    
+    if (!apiKey) {
+        console.log('[ChatBot] OpenCode API key not configured');
+        return { success: false, error: 'OpenCode API密钥未配置' };
+    }
+    
+    const messages = [
+        { role: 'system', content: AI_SYSTEM_PROMPT },
+        ...history.slice(-5).map(h => ({ role: h.isUser ? 'user' : 'assistant', content: h.text })),
+        { role: 'user', content: message }
+    ];
+    
+    try {
+        const response = await axios.post(
+            apiUrl,
+            { model: model || 'minimax-m2.5-free', messages: messages, max_tokens: 500 },
+            {
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: AI_TIMEOUT
+            }
+        );
+        
+        const answer = response.data?.choices?.[0]?.message?.content;
+        if (answer) {
+            return { success: true, answer: answer, modelName: model || 'minimax-m2.5-free' };
+        }
+        return { success: false, error: 'AI返回为空' };
+    } catch (err) {
+        const status = err.response?.status;
+        const data = err.response?.data;
+        console.error('[ChatBot] OpenCode API Error:', status, JSON.stringify(data || err.message));
         
         if (status === 401) {
             return { success: false, error: 'API密钥无效' };
@@ -122,6 +184,17 @@ async function callAIApi(message, model, history) {
             return { success: false, error: 'AI服务暂时不可用' };
         }
         return { success: false, error: '网络错误: ' + (err.message || '未知错误') };
+    }
+}
+
+async function callAIApi(message, model, history) {
+    const deepseekModels = ['deepseek-v4-flash', 'deepseek-chat'];
+    const useModel = model || process.env.AI_MODEL || 'deepseek-v4-flash';
+    
+    if (deepseekModels.includes(useModel)) {
+        return await callDeepSeekApi(message, useModel, history);
+    } else {
+        return await callOpenCodeApi(message, useModel, history);
     }
 }
 
@@ -137,7 +210,7 @@ router.post('/ask', async (req, res) => {
         
         const userMessage = message.trim();
         const userSelectedModel = model || null;
-        const defaultModel = process.env.AI_MODEL || 'minimax-m2.5-free';
+        const defaultModel = process.env.AI_MODEL || 'deepseek-v4-flash';
         const useModel = userSelectedModel || defaultModel;
         
         console.log('[ChatBot] User:', userMessage, '| Model:', useModel);
@@ -197,12 +270,24 @@ router.get('/hot-questions', async (req, res) => {
     }
 });
 
+router.get('/models', (req, res) => {
+    res.status(200).json({
+        code: 200,
+        data: {
+            models: AVAILABLE_MODELS,
+            default_model: process.env.AI_MODEL || 'deepseek-v4-flash'
+        }
+    });
+});
+
 router.get('/mode', (req, res) => {
     res.status(200).json({
         code: 200,
         data: {
-            ai_enabled: !!process.env.OPENCODE_API_KEY,
-            default_model: process.env.AI_MODEL || 'minimax-m2.5-free'
+            ai_enabled: !!(process.env.DEEPSEEK_API_KEY || process.env.OPENCODE_API_KEY),
+            default_model: process.env.AI_MODEL || 'deepseek-v4-flash',
+            deepseek_enabled: !!process.env.DEEPSEEK_API_KEY,
+            opencode_enabled: !!process.env.OPENCODE_API_KEY
         }
     });
 });

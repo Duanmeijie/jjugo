@@ -17,6 +17,7 @@ app.use('/api/orders', require('./routes/orders'));
 app.use('/api', require('./routes/reviews'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/chatbot', require('./routes/chatbot'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

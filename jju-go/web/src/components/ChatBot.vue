@@ -69,10 +69,12 @@
             popper-class="model-dropdown"
           >
             <el-option label="自动推荐" value="" />
-            <el-option label="MiniMax M2.5 Free" value="minimax-m2.5-free" />
-            <el-option label="GLM-4 Flash" value="glm-4-flash" />
-            <el-option label="Qwen Turbo" value="qwen-turbo" />
-            <el-option label="Nemotron-3-8B" value="nemotron-3-8b" />
+            <el-option 
+              v-for="model in availableModels" 
+              :key="model.id" 
+              :label="`${model.name} (${model.provider})`" 
+              :value="model.id" 
+            />
           </el-select>
           <el-input
             v-model="inputMessage"
@@ -101,9 +103,21 @@ const hotQuestions = ref([])
 const loading = ref(false)
 const messagesRef = ref(null)
 const selectedModel = ref('')
+const availableModels = ref([])
 
 const toggleChat = () => {
   isOpen.value = !isOpen.value
+}
+
+const fetchAvailableModels = async () => {
+  try {
+    const res = await axios.get('/api/chatbot/models')
+    if (res.data.code === 200) {
+      availableModels.value = res.data.data.models
+    }
+  } catch (err) {
+    console.error('Failed to fetch available models:', err)
+  }
 }
 
 const scrollToBottom = async () => {
@@ -211,6 +225,7 @@ const typeWriterEffect = async (text, source = 'local', modelName = '未知模�
 
 onMounted(() => {
   fetchHotQuestions()
+  fetchAvailableModels()
 })
 </script>
 

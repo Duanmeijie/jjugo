@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../config/db');
 const { verifyToken } = require('../middleware/auth');
+const { createNotification, TYPES } = require('./notifications');
 
 router.post('/:id/comments', verifyToken, async (req, res) => {
   try {
@@ -31,6 +32,17 @@ router.post('/:id/comments', verifyToken, async (req, res) => {
        WHERE c.id = ?`,
       [result.insertId]
     );
+
+    const seller = goods[0];
+    if (seller.seller_id !== userId) {
+      await createNotification(
+          seller.seller_id,
+          TYPES.NEW_COMMENT,
+          '新留言通知',
+          `您的商品收到新的留言`,
+          goodsId
+      );
+    }
 
     res.status(200).json({
       code: 200,

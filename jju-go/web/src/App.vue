@@ -44,6 +44,7 @@
       </div>
     </footer>
     <ChatBot />
+    <Notifications v-if="userStore.isLoggedIn" />
   </div>
 </template>
 
@@ -52,6 +53,7 @@ import { ref, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import ChatBot from '@/components/ChatBot.vue'
+import Notifications from '@/components/Notifications.vue'
 import GlassNavbar from '@/components/GlassNavbar.vue'
 import GlassButton from '@/components/GlassButton.vue'
 
